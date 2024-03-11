@@ -1,8 +1,6 @@
 package org.one_cedrus.carobackend.authentication;
 
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.controller.AuthenticateRequest;
-import org.one_cedrus.carobackend.controller.RegisterRequest;
 import org.one_cedrus.carobackend.user.Role;
 import org.one_cedrus.carobackend.user.User;
 import org.one_cedrus.carobackend.user.UserRepository;
@@ -12,6 +10,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +31,8 @@ public class AuthenticationService {
             var user = User.builder()
                     .username(request.getUsername())
                     .password(passwordEncoder.encode(request.getPassword()))
+                    .friends(new ArrayList<>())
+                    .requests(new ArrayList<>())
                     .role(Role.ROLE_USER)
                     .elo(0)
                     .build();
@@ -40,7 +43,7 @@ public class AuthenticationService {
                     .build();
         }
 
-        return AuthenticationResponse.builder().error("username is already existed!").build();
+        throw new UsernameExisted();
     }
 
     public AuthenticationResponse authenticate(AuthenticateRequest request) {
@@ -51,7 +54,7 @@ public class AuthenticationService {
                     .token(jwtService.generateToken(user))
                     .build();
         } catch (Exception _e) {
-            return AuthenticationResponse.builder().error("username or password is wrong!!").build();
+            throw new CredentialWrong();
         }
     }
 }
