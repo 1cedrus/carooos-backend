@@ -1,19 +1,16 @@
-package org.one_cedrus.carobackend.controller;
+package org.one_cedrus.carobackend.game;
 
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class FinishMessage {
     private final GameMessageType type = GameMessageType.Finish;
     private String winner;
-
-    @Override
-    public String toString() {
-        return String.format("{\"type\": \"%s\", \"winner\": \"%s\"}", type, winner);
-    }
 }

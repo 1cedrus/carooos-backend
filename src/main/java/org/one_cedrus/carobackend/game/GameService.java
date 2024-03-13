@@ -44,18 +44,18 @@ public class GameService {
         if (winnerDetail.getElo() > loserDetail.getElo()) {
             if (winnerDetail.getElo() - loserDetail.getElo() >= 50) {
                 winnerDetail.setElo(winnerDetail.getElo() + 5);
-                loserDetail.setElo(winnerDetail.getElo() - 5);
+                loserDetail.setElo(loserDetail.getElo() - 5);
             } else {
                 winnerDetail.setElo(winnerDetail.getElo() + 15);
-                loserDetail.setElo(winnerDetail.getElo() - 15);
+                loserDetail.setElo(loserDetail.getElo() - 15);
             }
         } else {
             if (loserDetail.getElo() - winnerDetail.getElo() >= 50) {
                 winnerDetail.setElo(winnerDetail.getElo() + 25);
-                loserDetail.setElo(winnerDetail.getElo() - 25);
+                loserDetail.setElo(loserDetail.getElo() - 25);
             } else {
                 winnerDetail.setElo(winnerDetail.getElo() + 15);
-                loserDetail.setElo(winnerDetail.getElo() - 15);
+                loserDetail.setElo(loserDetail.getElo() - 15);
             }
         }
         userRepo.save(winnerDetail);

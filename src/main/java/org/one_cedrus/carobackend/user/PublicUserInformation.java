@@ -1,15 +1,13 @@
-package org.one_cedrus.carobackend.controller;
+package org.one_cedrus.carobackend.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import org.one_cedrus.carobackend.user.Role;
 
 @Data
 @Builder
 @AllArgsConstructor
-public class UserInformation {
+public class PublicUserInformation {
     private String username;
     private Integer elo;
-    private Role role;
 }
