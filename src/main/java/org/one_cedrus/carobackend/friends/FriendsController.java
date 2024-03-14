@@ -84,42 +84,4 @@ public class FriendsController {
             return ResponseEntity.badRequest().body(ErrorDetails.builder().message(e.getMessage()).build());
         }
     }
-
-    @PostMapping("invite/{username}")
-    public ResponseEntity<?> inviteForMatch(
-            @PathVariable String username,
-            Principal principal
-    ) {
-        try {
-            var receiver = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(String.format("%s not found", username)));
-
-            if (receiver.getFriends().contains(principal.getName())) {
-                template.convertAndSendToUser(username, "/topic/friends", FriendsMessage.builder().type(FriendsMessageType.InviteRequest).username(principal.getName()).build());
-            }
-
-            return ResponseEntity.accepted().build();
-
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ErrorDetails.builder().message(e.getMessage()).build());
-        }
-    }
-
-
-    @PostMapping("response/{username}")
-    public ResponseEntity<?> responseInvite(
-            @PathVariable String username,
-            Principal principal
-    ) {
-        try {
-            var receiver = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException(String.format("%s not found", username)));
-
-            if (receiver.getFriends().contains(principal.getName())) {
-                template.convertAndSendToUser(username, "/topic/friends", FriendsMessage.builder().type(FriendsMessageType.InviteResponse).username(principal.getName()).build());
-            }
-
-            return ResponseEntity.accepted().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ErrorDetails.builder().message(e.getMessage()).build());
-        }
-    }
 }

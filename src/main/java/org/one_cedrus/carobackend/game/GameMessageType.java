@@ -4,7 +4,5 @@ public enum GameMessageType {
     Move,
     Join,
     Finish,
-    Messages,
     Draw,
-    WhiteFlag,
 }

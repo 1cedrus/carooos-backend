@@ -67,6 +67,10 @@ public class Game {
         return length >= 5;
     }
 
+    public boolean isDraw() {
+        return moves.size() == 400;
+    }
+
     public String nextMoveUser() {
         return moves.size() % 2 == 0 ? firstMove : (firstMove.equals(firstUser()) ? secondUser() : firstUser());
     }

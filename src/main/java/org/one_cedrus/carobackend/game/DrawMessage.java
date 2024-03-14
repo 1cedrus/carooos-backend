@@ -7,8 +7,6 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor
-public class MessagesMessage {
-    private final GameMessageType type = GameMessageType.Messages;
-    private String sender;
-    private String content;
+public class DrawMessage {
+    private final GameMessageType type = GameMessageType.Draw;
 }
