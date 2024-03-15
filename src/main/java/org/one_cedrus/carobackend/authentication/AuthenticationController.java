@@ -3,16 +3,16 @@ package org.one_cedrus.carobackend.authentication;
 
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.ErrorDetails;
-import org.springframework.http.HttpStatus;
+import org.one_cedrus.carobackend.authentication.dto.AuthenticateRequest;
+import org.one_cedrus.carobackend.authentication.dto.RegisterRequest;
+import org.one_cedrus.carobackend.excepetion.UsernameExisted;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class AuthController {
+public class AuthenticationController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/register")

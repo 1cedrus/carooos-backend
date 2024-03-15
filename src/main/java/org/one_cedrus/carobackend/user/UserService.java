@@ -1,6 +1,7 @@
 package org.one_cedrus.carobackend.user;
 
 import lombok.RequiredArgsConstructor;
+import org.one_cedrus.carobackend.user.dto.PublicUserInformation;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 

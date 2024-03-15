@@ -1,6 +1,11 @@
 package org.one_cedrus.carobackend.authentication;
 
 import lombok.RequiredArgsConstructor;
+import org.one_cedrus.carobackend.authentication.dto.AuthenticateRequest;
+import org.one_cedrus.carobackend.authentication.dto.AuthenticationResponse;
+import org.one_cedrus.carobackend.authentication.dto.RegisterRequest;
+import org.one_cedrus.carobackend.excepetion.WrongCredential;
+import org.one_cedrus.carobackend.excepetion.UsernameExisted;
 import org.one_cedrus.carobackend.user.Role;
 import org.one_cedrus.carobackend.user.User;
 import org.one_cedrus.carobackend.user.UserRepository;
@@ -10,7 +15,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 
@@ -54,7 +58,7 @@ public class AuthenticationService {
                     .token(jwtService.generateToken(user))
                     .build();
         } catch (Exception _e) {
-            throw new CredentialWrong();
+            throw new WrongCredential();
         }
     }
 }

@@ -1,4 +1,4 @@
-package org.one_cedrus.carobackend.user;
+package org.one_cedrus.carobackend.user.dto;
 
 public enum UserMessageType {
     GameInvite,

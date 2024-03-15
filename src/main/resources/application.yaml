@@ -1,17 +1,3 @@
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
-    password: mysecretpassword
-    username: myadmin
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-    show-sql: true
-    database: postgresql
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
-
-server:
-  port: 9000
+  profiles:
+    active: ${ACTIVE_PROFILE}

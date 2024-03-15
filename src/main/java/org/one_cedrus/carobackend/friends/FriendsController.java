@@ -2,6 +2,8 @@ package org.one_cedrus.carobackend.friends;
 
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.ErrorDetails;
+import org.one_cedrus.carobackend.friends.dto.FriendsMessage;
+import org.one_cedrus.carobackend.friends.dto.FriendsMessageType;
 import org.one_cedrus.carobackend.user.User;
 import org.one_cedrus.carobackend.user.UserRepository;
 import org.springframework.http.ResponseEntity;

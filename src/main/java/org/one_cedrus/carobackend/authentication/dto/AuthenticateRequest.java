@@ -1,4 +1,4 @@
-package org.one_cedrus.carobackend.friends;
+package org.one_cedrus.carobackend.authentication.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor
-public class FriendsMessage {
-    private FriendsMessageType type;
+public class AuthenticateRequest {
     private String username;
+    private String password;
 }

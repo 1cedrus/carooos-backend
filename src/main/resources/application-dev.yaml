@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DEV_POSTGRESQL_DATABASE_HOST}/postgres
+    username: ${DEV_POSTGRESQL_DATABASE_USERNAME}
+    password: ${DEV_POSTGRESQL_DATABASE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 9000

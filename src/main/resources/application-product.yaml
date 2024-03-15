@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${DIGITALOCEAN_POSTGRESQL_DATABASE_HOST}/defaultdb
+    username: ${DIGITALOCEAN_POSTGRESQL_DATABASE_USERNAME}
+    password: ${DIGITALOCEAN_POSTGRESQL_DATABASE_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+server:
+  port: 9000
+  ssl:
+    key-store: ${SSL_KEY_STORE}
+    key-store-password: ${SSL_KEY_STORE_PASSWORD}
+    key-store-type: PKCS12
+    key-alias: tomcat
+

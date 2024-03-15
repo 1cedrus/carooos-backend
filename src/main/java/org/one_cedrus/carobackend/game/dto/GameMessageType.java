@@ -1,4 +1,4 @@
-package org.one_cedrus.carobackend.game;
+package org.one_cedrus.carobackend.game.dto;
 
 public enum GameMessageType {
     Move,

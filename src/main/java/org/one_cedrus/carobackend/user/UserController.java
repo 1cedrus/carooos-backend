@@ -2,6 +2,7 @@ package org.one_cedrus.carobackend.user;
 
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.ErrorDetails;
+import org.one_cedrus.carobackend.user.dto.PublicUserInformation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;

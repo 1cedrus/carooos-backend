@@ -1,4 +1,4 @@
-package org.one_cedrus.carobackend.authentication;
+package org.one_cedrus.carobackend.excepetion;
 
 public class UsernameExisted extends RuntimeException {
 }

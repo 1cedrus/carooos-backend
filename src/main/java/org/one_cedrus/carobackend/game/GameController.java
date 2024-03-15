@@ -1,6 +1,10 @@
 package org.one_cedrus.carobackend.game;
 
 import lombok.RequiredArgsConstructor;
+import org.one_cedrus.carobackend.game.dto.DrawMessage;
+import org.one_cedrus.carobackend.game.dto.FinishMessage;
+import org.one_cedrus.carobackend.game.dto.JoinMessage;
+import org.one_cedrus.carobackend.game.dto.MoveMessage;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;

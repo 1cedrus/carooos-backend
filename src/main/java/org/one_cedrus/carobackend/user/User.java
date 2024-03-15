@@ -3,6 +3,8 @@ package org.one_cedrus.carobackend.user;
 import jakarta.persistence.*;
 import lombok.*;
 import org.one_cedrus.carobackend.chat.ChatMessage;
+import org.one_cedrus.carobackend.user.dto.PublicUserInformation;
+import org.one_cedrus.carobackend.user.dto.UserInformation;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

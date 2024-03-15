@@ -1,8 +1,9 @@
-package org.one_cedrus.carobackend.user;
+package org.one_cedrus.carobackend.user.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import org.one_cedrus.carobackend.user.Role;
 
 import java.util.List;
 
