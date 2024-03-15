@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class AuthenticationExceptionHandler {
 
     @ExceptionHandler({UsernameNotFoundException.class, AuthenticationException.class})
-    public ErrorDetails usernameNotFoundException() {
-        return ErrorDetails.builder().message("Username not found!").build();
+    public ErrorDetails usernameNotFoundException(Exception excep) {
+        return ErrorDetails.builder().message(excep.getMessage()).build();
     }
 
     @ExceptionHandler({UsernameExistedException.class})
