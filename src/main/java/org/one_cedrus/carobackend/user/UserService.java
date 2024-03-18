@@ -12,6 +12,7 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepo;
 
+
     public List<PublicUserInformation> listPublicUsersInformation(String query) {
         return userRepo
                 .findByUsernameStartingWith(query, PageRequest.of(0, 10))
