@@ -30,7 +30,9 @@ public class AuthenticationService {
         var password = request.getPassword();
 
         if (username.length() <= 3
+                || username.length() > 16
                 || password.length() < 5
+                || password.length() > 32
                 || !username.matches("^[a-zA-Z0-9_]+$")) {
             throw new BadRegisterRequest();
         }
