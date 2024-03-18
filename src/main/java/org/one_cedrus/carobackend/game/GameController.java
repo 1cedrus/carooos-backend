@@ -1,8 +1,9 @@
 package org.one_cedrus.carobackend.game;
 
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.game.dto.DrawMessage;
-import org.one_cedrus.carobackend.game.dto.FinishMessage;
+import org.one_cedrus.carobackend.excepetion.GameException;
+import org.one_cedrus.carobackend.excepetion.GameNotFound;
+import org.one_cedrus.carobackend.excepetion.NotHasPermit;
 import org.one_cedrus.carobackend.game.dto.JoinMessage;
 import org.one_cedrus.carobackend.game.dto.MoveMessage;
 import org.springframework.http.ResponseEntity;
@@ -10,13 +11,10 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -26,101 +24,70 @@ import java.util.concurrent.ScheduledFuture;
 public class GameController {
     private final SimpMessagingTemplate template;
     private final GameService gameService;
-    private final TaskScheduler taskScheduler;
-
     private final Map<String, ScheduledFuture<?>> timeChecker = new HashMap<>();
 
-    @MessageMapping("/game/{id}")
+    @MessageMapping("/game/{roomCode}")
     public void process(
-            @DestinationVariable String id,
+            @DestinationVariable String roomCode,
             @Payload String payload,
             Principal principal
     ) {
-        Game game = gameService.findPlayingGame(id).orElseThrow(() -> new RuntimeException("Game haven't init!"));
+        String sender = principal.getName();
+        Game game = gameService.findPlayingGame(roomCode).orElseThrow(GameNotFound::new);
 
         Short move = Short.parseShort(payload);
-        String moveUser = game.nextMoveUser();
+        String moveUser = game.moveUser();
+        String nextMoveUser = game.nextMoveUser();
 
-        if (!moveUser.equals(principal.getName())) {
-            throw new Error(moveUser + " " + principal.getName() + " is not a same person");
+        if (!moveUser.equals(sender)) {
+            throw new NotHasPermit();
         }
 
         if (game.getMoves().contains(move)) {
-            throw new RuntimeException("This spot already be marked!");
+            throw new GameException("This spot already be marked!");
         }
 
         game.getMoves().add(move);
-        template.convertAndSend("/topic/game/" + id,
-                MoveMessage.builder().move(move).nextMove(game.nextMoveUser()).build());
+        template.convertAndSend("/topic/game/" + roomCode,
+                MoveMessage.builder()
+                        .move(move)
+                        .nextMove(nextMoveUser)
+                        .build());
 
-        timeChecker.get(id).cancel(false);
-        var checker = taskScheduler.schedule(() -> {
-            game.setWinner(moveUser);
-            template.convertAndSend("/topic/game/" + id, FinishMessage.builder().winner(moveUser).build());
-            gameService.finishGame(id);
+        if (timeChecker.containsKey(roomCode)) {
+            timeChecker.get(roomCode).cancel(false);
+        }
 
-            timeChecker.remove(id);
-        }, Instant.now().plus(60, ChronoUnit.SECONDS));
-        timeChecker.put(id, checker);
-
-        if (game.isFinish()) {
-            template.convertAndSend("/topic/game/" + id, FinishMessage.builder().winner(moveUser).build());
-            gameService.finishGame(id);
-
-            timeChecker.get(id).cancel(false);
-            timeChecker.remove(id);
-        } else if (game.isDraw()) {
-            template.convertAndSend("/topic/game/" + id, DrawMessage.builder().build());
-            gameService.drawGame(id);
+        if (gameService.endOrDraw(roomCode)) {
+            timeChecker.remove(roomCode);
+        } else {
+            timeChecker.put(roomCode, gameService.endGameIfMoveUserNotMove(game));
         }
     }
 
-    @MessageMapping("/join/{id}")
+    @MessageMapping("/join/{roomCode}")
     public void joinGame(
-            @DestinationVariable String id,
+            @DestinationVariable String roomCode,
             Principal principal
     ) {
         String sender = principal.getName();
-        String firstUser = id.substring(0, id.indexOf("-"));
-        String secondUser = id.substring(id.indexOf("-") + 1);
+        String firstUser = Game.roomCodeToFirstUser(roomCode);
+        String secondUser = Game.roomCodeToSecondUser(roomCode);
 
         if (!sender.equals(firstUser) && !sender.equals(secondUser)) {
             throw new RuntimeException(String.format("%s does not have authorization", sender));
         }
 
-        if (gameService.findPlayingGame(id).isPresent()) {
-            Game game = gameService.findPlayingGame(id).get();
-            template.convertAndSend("/topic/game/" + id, JoinMessage.builder().currentMoves(game.getMoves()).nextMove(game.nextMoveUser()).build());
+        if (gameService.findPlayingGame(roomCode).isPresent()) {
+            Game game = gameService.findPlayingGame(roomCode).get();
+            template.convertAndSend("/topic/game/" + roomCode, JoinMessage.builder()
+                    .currentMoves(game.getMoves())
+                    .nextMove(game.nextMoveUser())
+                    .build()
+            );
         } else {
-            gameService.submitGame(sender, id);
-
-            if (timeChecker.containsKey(id)) {
-                return;
-            }
-
-            var initGame = taskScheduler.schedule(() -> {
-                if (gameService.findGameByUsername(firstUser).equals(id) && gameService.findGameByUsername(secondUser).equals(id)) {
-                    Game game = gameService.newGame(id);
-                    template.convertAndSend("/topic/game/" + id, JoinMessage.builder().currentMoves(game.getMoves()).nextMove(game.getFirstMove()).build());
-
-                    var checker = taskScheduler.schedule(() -> {
-                        var winner = game.getFirstMove().equals(firstUser) ? secondUser : firstUser;
-                        game.setWinner(winner);
-                        var loser = game.getWinner().equals(firstUser) ? secondUser : firstUser;
-                        game.setLoser(loser);
-                        template.convertAndSend("/topic/game/" + id, FinishMessage.builder().winner(winner).build());
-                        gameService.finishGame(id);
-
-                        timeChecker.remove(id);
-                    }, Instant.now().plus(60, ChronoUnit.SECONDS));
-                    timeChecker.put(id, checker);
-                } else {
-                    gameService.removeGame(sender);
-                    timeChecker.remove(id);
-                }
-            }, Instant.now().plus(5, ChronoUnit.SECONDS));
-
-            timeChecker.put(id, initGame);
+            gameService.submitGame(sender, roomCode);
+            gameService.initGame(roomCode);
         }
     }
 

@@ -1,43 +1,109 @@
 package org.one_cedrus.carobackend.game;
 
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.user.User;
+import org.one_cedrus.carobackend.game.dto.DrawMessage;
+import org.one_cedrus.carobackend.game.dto.FinishMessage;
+import org.one_cedrus.carobackend.game.dto.JoinMessage;
 import org.one_cedrus.carobackend.user.UserRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
 
 @Service
 @RequiredArgsConstructor
 public class GameService {
     private final GameRepository gameRepo;
-    private final UserDetailsService userDetailsService;
     private final UserRepository userRepo;
+    private final TaskScheduler taskScheduler;
+    private final SimpMessagingTemplate template;
     private final Map<String, Game> games = new HashMap<>();
     private final Map<String, String> usernameToGame = new HashMap<>();
+    private final Map<String, ScheduledFuture<?>> onInitGame = new HashMap<>();
 
-    public Game newGame(String id) {
-        Game game = Game.builder()
-                .id(id)
-                .firstMove(new Random().nextInt(2) % 2 == 0 ? id.substring(0, id.indexOf("-")) : id.substring(id.indexOf("-") + 1))
-                .moves(new ArrayList<>())
-                .build();
+    public boolean endOrDraw(String roomCode) {
+        Game game = games.get(roomCode);
 
-        games.put(id, game);
+        if (game.isFinish()) {
+            template.convertAndSend("/topic/game/" + roomCode, FinishMessage.builder().winner(game.getWinner()).build());
+            finishGame(roomCode);
+            return true;
+        } else if (game.isDraw()) {
+            template.convertAndSend("/topic/game/" + roomCode, DrawMessage.builder().build());
+            drawGame(roomCode);
+            return true;
+        }
 
-        return game;
+        return false;
     }
+
+    public ScheduledFuture<?> initGame(String roomCode) {
+        if (onInitGame.containsKey(roomCode)) {
+            return onInitGame.get(roomCode);
+        }
+
+        String firstUser = Game.roomCodeToFirstUser(roomCode);
+        String secondUser = Game.roomCodeToSecondUser(roomCode);
+
+        var initGame = taskScheduler.schedule(() -> {
+            boolean isBothUsersJoined = findGameByUsername(firstUser).equals(roomCode) && findGameByUsername(secondUser).equals(roomCode);
+
+            if (isBothUsersJoined) {
+                Game game = newGame(roomCode);
+
+                template.convertAndSend("/topic/game/" + roomCode,
+                        JoinMessage.builder()
+                                .currentMoves(game.getMoves())
+                                .nextMove(game.getFirstMoveUser())
+                                .build()
+                );
+
+                endGameIfMoveUserNotMove(game, true);
+            } else {
+                unSubmitGame(firstUser, roomCode);
+                unSubmitGame(secondUser, roomCode);
+            }
+
+            onInitGame.remove(roomCode);
+        }, Instant.now().plus(5, ChronoUnit.SECONDS));
+
+        onInitGame.put(roomCode, initGame);
+        return initGame;
+    }
+
+    public ScheduledFuture<?> endGameIfMoveUserNotMove(Game game, boolean _firstMove) {
+        return taskScheduler.schedule(() -> {
+            if (game.getMoves().isEmpty()) {
+                template.convertAndSend("/topic/game/" + game.getRoomCode(),
+                        FinishMessage.builder().winner(game.nextMoveUser()).build());
+
+                finishGame(game.getRoomCode());
+            }
+        }, Instant.now().plus(60, ChronoUnit.SECONDS));
+    }
+
+    public ScheduledFuture<?> endGameIfMoveUserNotMove(Game game) {
+        return taskScheduler.schedule(() -> {
+            template.convertAndSend("/topic/game/" + game.getRoomCode(),
+                    FinishMessage.builder().winner(game.nextMoveUser()).build());
+
+            finishGame(game.getRoomCode());
+        }, Instant.now().plus(60, ChronoUnit.SECONDS));
+    }
+
 
     public void submitGame(String username, String id) {
         usernameToGame.put(username, id);
     }
 
-    public void removeGame(String username) {
-        usernameToGame.remove(username);
+    public void unSubmitGame(String username, String roomCode) {
+        if (findGameByUsername(username).equals(roomCode)) {
+            usernameToGame.remove(username);
+        }
     }
 
     public String findGameByUsername(String username) {
@@ -52,46 +118,54 @@ public class GameService {
         return Optional.empty();
     }
 
-    public void drawGame(String id) {
-        Game game = games.get(id);
+    private void drawGame(String roomCode) {
+        Game game = games.get(roomCode);
 
         usernameToGame.remove(game.firstUser());
         usernameToGame.remove(game.secondUser());
 
-        gameRepo.save(games.get(id));
-        games.remove(id);
+        gameRepo.save(game);
+        games.remove(roomCode);
     }
 
-    public void finishGame(String id) {
-        Game game = games.get(id);
+    private void finishGame(String roomCode) {
+        Game game = games.get(roomCode);
 
-        usernameToGame.remove(game.firstUser());
-        usernameToGame.remove(game.secondUser());
+        unSubmitGame(game.firstUser(), roomCode);
+        unSubmitGame(game.secondUser(), roomCode);
 
-        var winnerDetail = (User) userDetailsService.loadUserByUsername(game.getWinner());
-        var loserDetail = (User) userDetailsService.loadUserByUsername(game.getLoser());
+        var winner = userRepo.findByUsername(game.getWinner()).orElseThrow();
+        var loser = userRepo.findByUsername(game.getLoser()).orElseThrow();
 
-        if (winnerDetail.getElo() > loserDetail.getElo()) {
-            if (winnerDetail.getElo() - loserDetail.getElo() >= 50) {
-                winnerDetail.setElo(winnerDetail.getElo() + 5);
-                loserDetail.setElo(loserDetail.getElo() - 5);
+        if (winner.getElo() > loser.getElo()) {
+            if (winner.getElo() - loser.getElo() >= 50) {
+                winner.setElo(winner.getElo() + 5);
+                loser.setElo(loser.getElo() - 5);
             } else {
-                winnerDetail.setElo(winnerDetail.getElo() + 15);
-                loserDetail.setElo(loserDetail.getElo() - 15);
+                winner.setElo(winner.getElo() + 15);
+                loser.setElo(loser.getElo() - 15);
             }
         } else {
-            if (loserDetail.getElo() - winnerDetail.getElo() >= 50) {
-                winnerDetail.setElo(winnerDetail.getElo() + 25);
-                loserDetail.setElo(loserDetail.getElo() - 25);
+            if (loser.getElo() - winner.getElo() >= 50) {
+                winner.setElo(winner.getElo() + 25);
+                loser.setElo(loser.getElo() - 25);
             } else {
-                winnerDetail.setElo(winnerDetail.getElo() + 15);
-                loserDetail.setElo(loserDetail.getElo() - 15);
+                winner.setElo(winner.getElo() + 15);
+                loser.setElo(loser.getElo() - 15);
             }
         }
-        userRepo.save(winnerDetail);
-        userRepo.save(loserDetail);
 
-        gameRepo.save(games.get(id));
-        games.remove(id);
+        userRepo.save(winner);
+        userRepo.save(loser);
+
+        gameRepo.save(game);
+        games.remove(roomCode);
+    }
+
+    private Game newGame(String roomCode) {
+        Game game = Game.newGame(roomCode);
+
+        games.put(roomCode, game);
+        return game;
     }
 }
