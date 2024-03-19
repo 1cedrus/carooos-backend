@@ -34,6 +34,7 @@ public class ChatController {
             chatRepo.save(message);
 
             template.convertAndSendToUser(message.getReceiver(), "/topic/messages", message);
+            template.convertAndSendToUser(message.getSender(), "/topic/messages", message);
 
             return ResponseEntity.accepted().build();
         } catch (Exception e) {
@@ -48,6 +49,26 @@ public class ChatController {
 
             var sentMessages = chatRepo.getChatMessagesBySenderOrderByTimeStampDesc(sender.getUsername(), PageRequest.of(0, 10));
             var receivedMessages = chatRepo.getChatMessagesByReceiverOrderByTimeStampDesc(sender.getUsername(), PageRequest.of(0, 10));
+
+            sentMessages.addAll(receivedMessages);
+
+            return ResponseEntity.ok(sentMessages);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ErrorDetails.builder().message(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{username}")
+    private ResponseEntity<?> listSpecificMessages(
+            @PathVariable String username,
+            Principal principal
+    ) {
+        try {
+            var sender = userRepo.findByUsername(principal.getName()).orElseThrow();
+            var receiver = userRepo.findByUsername(username).orElseThrow();
+
+            var sentMessages = chatRepo.findChatMessagesBySenderAndReceiverOrderByTimeStampDesc(sender.getUsername(), receiver.getUsername(), PageRequest.of(0, 5));
+            var receivedMessages = chatRepo.findChatMessagesBySenderAndReceiverOrderByTimeStampDesc(receiver.getUsername(), sender.getUsername(), PageRequest.of(0, 5));
 
             sentMessages.addAll(receivedMessages);
 

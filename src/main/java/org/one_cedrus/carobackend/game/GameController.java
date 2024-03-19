@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.excepetion.GameException;
 import org.one_cedrus.carobackend.excepetion.GameNotFound;
 import org.one_cedrus.carobackend.excepetion.NotHasPermit;
+import org.one_cedrus.carobackend.game.dto.CurrentGame;
 import org.one_cedrus.carobackend.game.dto.JoinMessage;
 import org.one_cedrus.carobackend.game.dto.MoveMessage;
 import org.springframework.http.ResponseEntity;
@@ -75,7 +76,7 @@ public class GameController {
         String secondUser = Game.roomCodeToSecondUser(roomCode);
 
         if (!sender.equals(firstUser) && !sender.equals(secondUser)) {
-            throw new RuntimeException(String.format("%s does not have authorization", sender));
+            throw new GameException(String.format("%s does not have authorization", sender));
         }
 
         if (gameService.findPlayingGame(roomCode).isPresent()) {
@@ -94,6 +95,6 @@ public class GameController {
 
     @GetMapping("/api/game")
     public ResponseEntity<?> currentGame(Principal principal) {
-        return ResponseEntity.ok().body(gameService.findGameByUsername(principal.getName()));
+        return ResponseEntity.ok().body(CurrentGame.builder().game(gameService.findGameByUsername(principal.getName())).build());
     }
 }

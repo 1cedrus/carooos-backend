@@ -29,21 +29,21 @@ public class GameService {
         Game game = games.get(roomCode);
 
         if (game.isFinish()) {
-            template.convertAndSend("/topic/game/" + roomCode, FinishMessage.builder().winner(game.getWinner()).build());
             finishGame(roomCode);
+            template.convertAndSend("/topic/game/" + roomCode, FinishMessage.builder().winner(game.getWinner()).build());
             return true;
         } else if (game.isDraw()) {
-            template.convertAndSend("/topic/game/" + roomCode, DrawMessage.builder().build());
             drawGame(roomCode);
+            template.convertAndSend("/topic/game/" + roomCode, DrawMessage.builder().build());
             return true;
         }
 
         return false;
     }
 
-    public ScheduledFuture<?> initGame(String roomCode) {
+    public void initGame(String roomCode) {
         if (onInitGame.containsKey(roomCode)) {
-            return onInitGame.get(roomCode);
+            return;
         }
 
         String firstUser = Game.roomCodeToFirstUser(roomCode);
@@ -72,26 +72,27 @@ public class GameService {
         }, Instant.now().plus(5, ChronoUnit.SECONDS));
 
         onInitGame.put(roomCode, initGame);
-        return initGame;
     }
 
-    public ScheduledFuture<?> endGameIfMoveUserNotMove(Game game, boolean _firstMove) {
-        return taskScheduler.schedule(() -> {
+    public void endGameIfMoveUserNotMove(Game game, boolean _firstMove) {
+        taskScheduler.schedule(() -> {
             if (game.getMoves().isEmpty()) {
+                game.setWinner(game.nextMoveUser());
+                finishGame(game.getRoomCode());
+
                 template.convertAndSend("/topic/game/" + game.getRoomCode(),
                         FinishMessage.builder().winner(game.nextMoveUser()).build());
-
-                finishGame(game.getRoomCode());
             }
         }, Instant.now().plus(60, ChronoUnit.SECONDS));
     }
 
     public ScheduledFuture<?> endGameIfMoveUserNotMove(Game game) {
         return taskScheduler.schedule(() -> {
+            game.setWinner(game.nextMoveUser());
+            finishGame(game.getRoomCode());
+
             template.convertAndSend("/topic/game/" + game.getRoomCode(),
                     FinishMessage.builder().winner(game.nextMoveUser()).build());
-
-            finishGame(game.getRoomCode());
         }, Instant.now().plus(60, ChronoUnit.SECONDS));
     }
 
@@ -121,8 +122,8 @@ public class GameService {
     private void drawGame(String roomCode) {
         Game game = games.get(roomCode);
 
-        usernameToGame.remove(game.firstUser());
-        usernameToGame.remove(game.secondUser());
+        unSubmitGame(game.firstUser(), roomCode);
+        unSubmitGame(game.secondUser(), roomCode);
 
         gameRepo.save(game);
         games.remove(roomCode);

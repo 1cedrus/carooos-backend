@@ -11,4 +11,6 @@ public interface ChatRepository extends JpaRepository<ChatMessage, Long> {
     List<ChatMessage> getChatMessagesBySenderOrderByTimeStampDesc(String sender, Pageable pageable);
 
     List<ChatMessage> getChatMessagesByReceiverOrderByTimeStampDesc(String receiver, Pageable pageable);
+
+    List<ChatMessage> findChatMessagesBySenderAndReceiverOrderByTimeStampDesc(String sender, String receiver, Pageable pageable);
 }
