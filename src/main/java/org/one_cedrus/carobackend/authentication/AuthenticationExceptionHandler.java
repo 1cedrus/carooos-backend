@@ -2,6 +2,7 @@ package org.one_cedrus.carobackend.authentication;
 
 import org.one_cedrus.carobackend.ErrorDetails;
 import org.one_cedrus.carobackend.excepetion.BadRegisterRequest;
+import org.one_cedrus.carobackend.excepetion.JwtTokenNotValidException;
 import org.one_cedrus.carobackend.excepetion.UsernameExistedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
@@ -27,5 +28,10 @@ public class AuthenticationExceptionHandler {
     @ExceptionHandler({BadRegisterRequest.class})
     public ErrorDetails badRegisterRequest() {
         return ErrorDetails.builder().message("Bad register request!").build();
+    }
+
+    @ExceptionHandler({JwtTokenNotValidException.class})
+    public ErrorDetails jwtTokenNotValid() {
+        return ErrorDetails.builder().message("Token is not valid!").build();
     }
 }

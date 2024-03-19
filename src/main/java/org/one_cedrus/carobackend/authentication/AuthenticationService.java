@@ -5,13 +5,18 @@ import org.one_cedrus.carobackend.authentication.dto.AuthenticateRequest;
 import org.one_cedrus.carobackend.authentication.dto.AuthenticationResponse;
 import org.one_cedrus.carobackend.authentication.dto.RegisterRequest;
 import org.one_cedrus.carobackend.excepetion.BadRegisterRequest;
+import org.one_cedrus.carobackend.excepetion.JwtTokenNotValidException;
 import org.one_cedrus.carobackend.excepetion.UsernameExistedException;
 import org.one_cedrus.carobackend.user.Role;
 import org.one_cedrus.carobackend.user.User;
 import org.one_cedrus.carobackend.user.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,6 +29,20 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    public AuthenticationResponse verify(String token) {
+        try {
+            final String username = jwtService.extractUsername(token);
+
+            UserDetails userDetails = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username not found"));
+            if (jwtService.isTokenValid(token, userDetails)) {
+                return AuthenticationResponse.builder().token(token).build();
+            }
+
+            throw new RuntimeException();
+        } catch (RuntimeException _e) {
+            throw new JwtTokenNotValidException();
+        }
+    }
 
     public AuthenticationResponse register(RegisterRequest request) {
         var username = request.getUsername();

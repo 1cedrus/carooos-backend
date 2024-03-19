@@ -27,4 +27,11 @@ public class AuthenticationController {
     ) {
         return ResponseEntity.ok(authenticationService.authenticate(request));
     }
+
+    @PostMapping("/verify")
+    public ResponseEntity<AuthenticationResponse> authenticate(
+            @RequestBody String token
+    ) {
+        return ResponseEntity.ok(authenticationService.verify(token));
+    }
 }
