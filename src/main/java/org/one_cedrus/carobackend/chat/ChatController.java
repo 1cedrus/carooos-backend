@@ -1,80 +1,76 @@
 package org.one_cedrus.carobackend.chat;
 
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.ErrorDetails;
-import org.one_cedrus.carobackend.user.UserRepository;
+import org.one_cedrus.carobackend.chat.dto.Pagination;
+import org.one_cedrus.carobackend.chat.dto.RawMessage;
+import org.one_cedrus.carobackend.chat.model.Message;
+import org.one_cedrus.carobackend.chat.repository.MessageRepository;
+import org.one_cedrus.carobackend.chat.repository.UCRepository;
+import org.one_cedrus.carobackend.chat.service.ConversationService;
+import org.one_cedrus.carobackend.user.UserService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.time.LocalDateTime;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/messages")
 public class ChatController {
-    private final SimpMessagingTemplate template;
-    private final UserRepository userRepo;
-    private final ChatRepository chatRepo;
+    private final UserService userService;
+    private final ConversationService cService;
+    private final MessageRepository messageRepo;
+    private final UCRepository uCRepo;
 
     @PostMapping
     public ResponseEntity<?> sendMessage(
-            @RequestBody ChatMessage message
+        @RequestBody RawMessage rawMessage
     ) {
-        try {
-            var sender = userRepo.findByUsername(message.getSender()).orElseThrow(() -> new UsernameNotFoundException(String.format("%s not found", message.getSender())));
+        System.out.println(rawMessage.getSender());
+        System.out.println(rawMessage.getUcid());
+        System.out.println(rawMessage.getContent());
 
-            if (!sender.getFriends().contains(message.getReceiver()))
-                throw new RuntimeException("Sender and receiver are not in friendship");
+        var sender = userService.getUser(rawMessage.getSender());
+        var uConversation = cService.ensureInConversation(sender, rawMessage.getUcid());
+        var conversation = uConversation.getConversation();
+        var newMessage = Message.create(sender.getUsername(), uConversation.getConversation(), rawMessage.getContent());
 
-            message.setTimeStamp(LocalDateTime.now());
-            chatRepo.save(message);
+        messageRepo.save(newMessage);
+        cService.spreadMessage(newMessage, conversation);
 
-            template.convertAndSendToUser(message.getReceiver(), "/topic/messages", message);
-            template.convertAndSendToUser(message.getSender(), "/topic/messages", message);
+        return ResponseEntity.accepted().build();
 
-            return ResponseEntity.accepted().build();
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ErrorDetails.builder().message(e.getMessage()));
-        }
     }
 
-    @GetMapping
-    private ResponseEntity<?> listMessage(Principal principal) {
-        try {
-            var sender = userRepo.findByUsername(principal.getName()).orElseThrow(() -> new UsernameNotFoundException(String.format("%s not found", principal.getName())));
 
-            var sentMessages = chatRepo.getChatMessagesBySenderOrderByTimeStampDesc(sender.getUsername(), PageRequest.of(0, 10));
-            var receivedMessages = chatRepo.getChatMessagesByReceiverOrderByTimeStampDesc(sender.getUsername(), PageRequest.of(0, 10));
-
-            sentMessages.addAll(receivedMessages);
-
-            return ResponseEntity.ok(sentMessages);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ErrorDetails.builder().message(e.getMessage()));
-        }
-    }
-
-    @GetMapping("/{username}")
-    private ResponseEntity<?> listSpecificMessages(
-            @PathVariable String username,
-            Principal principal
+    @GetMapping("/{uConversationId}")
+    private ResponseEntity<?> listConversationMessages(
+        @PathVariable String uConversationId,
+        @RequestParam(defaultValue = "0") String from,
+        @RequestParam(defaultValue = "10") String perPage,
+        Principal principal
     ) {
-        try {
-            var sender = userRepo.findByUsername(principal.getName()).orElseThrow();
-            var receiver = userRepo.findByUsername(username).orElseThrow();
+        var sender = userService.getUser(principal.getName());
+        var uConversation = cService.ensureInConversation(sender, Long.parseLong(uConversationId));
+        var conversation = uConversation.getConversation();
 
-            var sentMessages = chatRepo.findChatMessagesBySenderAndReceiverOrderByTimeStampDesc(sender.getUsername(), receiver.getUsername(), PageRequest.of(0, 5));
-            var receivedMessages = chatRepo.findChatMessagesBySenderAndReceiverOrderByTimeStampDesc(receiver.getUsername(), sender.getUsername(), PageRequest.of(0, 5));
+        var fromInt = Integer.parseInt(from);
+        var perPageInt = Integer.parseInt(perPage);
+        var numOfMessages = conversation.getNumOfMessages();
+        var messages = messageRepo.getChatMessagesByConversationOrderByTimeStampDesc(conversation, PageRequest.of(fromInt, perPageInt));
 
-            sentMessages.addAll(receivedMessages);
+        uConversation.setSeen(true);
+        uCRepo.save(uConversation);
 
-            return ResponseEntity.ok(sentMessages);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ErrorDetails.builder().message(e.getMessage()));
-        }
+        return ResponseEntity.ok(
+            Pagination.<Message>builder()
+                .items(messages)
+                .from(fromInt)
+                .perPage(perPageInt)
+                .hasNextPage((fromInt + 1) * perPageInt < numOfMessages)
+                .total(numOfMessages)
+                .build()
+        );
     }
 }

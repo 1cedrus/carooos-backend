@@ -1,16 +1,16 @@
-package org.one_cedrus.carobackend.user;
+package org.one_cedrus.carobackend.user.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.one_cedrus.carobackend.chat.ChatMessage;
-import org.one_cedrus.carobackend.user.dto.PublicUserInformation;
-import org.one_cedrus.carobackend.user.dto.UserInformation;
+import org.one_cedrus.carobackend.chat.model.UserConversation;
+import org.one_cedrus.carobackend.game.Game;
+import org.one_cedrus.carobackend.user.dto.PubUserInfo;
+import org.one_cedrus.carobackend.user.dto.UserInfo;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 @Data
 @Entity
@@ -25,40 +25,22 @@ public class User implements UserDetails {
     private Integer elo;
 
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Role role = Role.ROLE_USER;
 
     @ElementCollection
     @CollectionTable(joinColumns = @JoinColumn(name = "username"))
-    private List<String> friends;
+    private List<String> friends = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(joinColumns = @JoinColumn(name = "username"))
-    private List<String> requests;
+    private List<String> requests = new ArrayList<>();
 
-    @OneToMany(mappedBy = "sender")
-    private List<ChatMessage> sentMessages;
+    @ManyToMany
+    private Set<Game> games = new HashSet<>();
 
-    @OneToMany(mappedBy = "receiver")
-    private List<ChatMessage> receivedMessages;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private Set<UserConversation> userConversations = new HashSet<>();
 
-
-    public UserInformation getUserInformation() {
-        return UserInformation
-                .builder()
-                .username(username)
-                .elo(elo)
-                .friends(friends)
-                .requests(requests)
-                .build();
-    }
-
-    public PublicUserInformation getPublicUserInformation() {
-        return PublicUserInformation
-                .builder()
-                .username(username)
-                .elo(elo)
-                .build();
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

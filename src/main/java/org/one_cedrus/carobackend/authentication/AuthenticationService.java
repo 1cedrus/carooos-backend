@@ -1,84 +1,77 @@
 package org.one_cedrus.carobackend.authentication;
 
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.authentication.dto.AuthenticateRequest;
+import org.one_cedrus.carobackend.authentication.dto.AuthenticationRequest;
 import org.one_cedrus.carobackend.authentication.dto.AuthenticationResponse;
-import org.one_cedrus.carobackend.authentication.dto.RegisterRequest;
-import org.one_cedrus.carobackend.excepetion.BadRegisterRequest;
-import org.one_cedrus.carobackend.excepetion.JwtTokenNotValidException;
-import org.one_cedrus.carobackend.excepetion.UsernameExistedException;
-import org.one_cedrus.carobackend.user.Role;
-import org.one_cedrus.carobackend.user.User;
+import org.one_cedrus.carobackend.user.UserService;
+import org.one_cedrus.carobackend.user.model.User;
 import org.one_cedrus.carobackend.user.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
+    private final UserService userService;
     private final UserRepository userRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+
     public AuthenticationResponse verify(String token) {
-        try {
-            final String username = jwtService.extractUsername(token);
+        final String username = jwtService.extractUsername(token);
 
-            UserDetails userDetails = userRepo.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("Username not found"));
-            if (jwtService.isTokenValid(token, userDetails)) {
-                return AuthenticationResponse.builder().token(token).build();
-            }
-
-            throw new RuntimeException();
-        } catch (RuntimeException _e) {
-            throw new JwtTokenNotValidException();
+        var user = userService.getUser(username);
+        if (!jwtService.isTokenValid(token, user)) {
+            throw new RuntimeException("Access token is not valid");
         }
+
+        return AuthenticationResponse.builder().token(token).build();
     }
 
-    public AuthenticationResponse register(RegisterRequest request) {
+    public AuthenticationResponse register(AuthenticationRequest request) {
+        ensureRegisterInfo(request);
+
+        var username = request.getUsername();
+        var password = request.getPassword();
+        var user = User.builder()
+            .username(username)
+            .password(passwordEncoder.encode(password))
+            .elo(0)
+            .build();
+        userRepo.save(user);
+
+        return AuthenticationResponse.builder()
+            .token(jwtService.generateToken(user))
+            .build();
+    }
+
+    public AuthenticationResponse authenticate(AuthenticationRequest request) {
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+        var user = userService.getUser(request.getUsername());
+
+        return AuthenticationResponse.builder()
+            .token(jwtService.generateToken(user))
+            .build();
+    }
+
+    private void ensureRegisterInfo(AuthenticationRequest request) {
         var username = request.getUsername();
         var password = request.getPassword();
 
         if (username.length() <= 3
-                || username.length() > 16
-                || password.length() < 5
-                || password.length() > 32
-                || !username.matches("^[a-zA-Z0-9_]+$")) {
-            throw new BadRegisterRequest();
+            || username.length() > 16
+            || password.length() < 5
+            || password.length() > 32
+            || !username.matches("^[a-zA-Z0-9_]+$")) {
+            throw new RuntimeException("Submitted information is not valid");
         }
 
-        if (userRepo.findByUsername(username).isPresent()) {
-            throw new UsernameExistedException();
+        if (userService.isExisted(username)) {
+            throw new RuntimeException("Submitted username is existed");
         }
-
-        var user = User.builder()
-                .username(username)
-                .password(passwordEncoder.encode(password))
-                .friends(new ArrayList<>())
-                .requests(new ArrayList<>())
-                .role(Role.ROLE_USER)
-                .elo(0)
-                .build();
-        userRepo.save(user);
-
-        return AuthenticationResponse.builder()
-                .token(jwtService.generateToken(user))
-                .build();
-    }
-
-    public AuthenticationResponse authenticate(AuthenticateRequest request) {
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-        var user = userRepo.findByUsername(request.getUsername()).orElseThrow();
-
-        return AuthenticationResponse.builder()
-                .token(jwtService.generateToken(user))
-                .build();
     }
 }

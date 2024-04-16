@@ -7,8 +7,7 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor
-public class RegisterRequest {
+public class AuthenticationRequest {
     private String username;
     private String password;
-    private String passwordConfirmation;
 }

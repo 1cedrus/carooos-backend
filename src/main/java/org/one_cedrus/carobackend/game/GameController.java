@@ -1,9 +1,6 @@
 package org.one_cedrus.carobackend.game;
 
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.excepetion.GameException;
-import org.one_cedrus.carobackend.excepetion.GameNotFound;
-import org.one_cedrus.carobackend.excepetion.NotHasPermit;
 import org.one_cedrus.carobackend.game.dto.CurrentGame;
 import org.one_cedrus.carobackend.game.dto.JoinMessage;
 import org.one_cedrus.carobackend.game.dto.MoveMessage;
@@ -29,31 +26,31 @@ public class GameController {
 
     @MessageMapping("/game/{roomCode}")
     public void process(
-            @DestinationVariable String roomCode,
-            @Payload String payload,
-            Principal principal
+        @DestinationVariable String roomCode,
+        @Payload String payload,
+        Principal principal
     ) {
-        String sender = principal.getName();
-        Game game = gameService.findPlayingGame(roomCode).orElseThrow(GameNotFound::new);
+        String caller = principal.getName();
+        Game game = gameService.findPlayingGame(roomCode).orElseThrow(() -> new RuntimeException("Game is not existed"));
 
         Short move = Short.parseShort(payload);
         String moveUser = game.moveUser();
         String nextMoveUser = game.nextMoveUser();
 
-        if (!moveUser.equals(sender)) {
-            throw new NotHasPermit();
+        if (!moveUser.equals(caller)) {
+            throw new RuntimeException("Caller is not have permission");
         }
 
         if (game.getMoves().contains(move)) {
-            throw new GameException("This spot already be marked!");
+            throw new RuntimeException("This spot already be marked!");
         }
 
         game.getMoves().add(move);
         template.convertAndSend("/topic/game/" + roomCode,
-                MoveMessage.builder()
-                        .move(move)
-                        .nextMove(nextMoveUser)
-                        .build());
+            MoveMessage.builder()
+                .move(move)
+                .nextMove(nextMoveUser)
+                .build());
 
         if (timeChecker.containsKey(roomCode)) {
             timeChecker.get(roomCode).cancel(false);
@@ -68,23 +65,23 @@ public class GameController {
 
     @MessageMapping("/join/{roomCode}")
     public void joinGame(
-            @DestinationVariable String roomCode,
-            Principal principal
+        @DestinationVariable String roomCode,
+        Principal principal
     ) {
         String sender = principal.getName();
         String firstUser = Game.roomCodeToFirstUser(roomCode);
         String secondUser = Game.roomCodeToSecondUser(roomCode);
 
         if (!sender.equals(firstUser) && !sender.equals(secondUser)) {
-            throw new GameException(String.format("%s does not have authorization", sender));
+            throw new RuntimeException(String.format("%s does not have authorization", sender));
         }
 
         if (gameService.findPlayingGame(roomCode).isPresent()) {
             Game game = gameService.findPlayingGame(roomCode).get();
             template.convertAndSend("/topic/game/" + roomCode, JoinMessage.builder()
-                    .currentMoves(game.getMoves())
-                    .nextMove(game.nextMoveUser())
-                    .build()
+                .currentMoves(game.getMoves())
+                .nextMove(game.nextMoveUser())
+                .build()
             );
         } else {
             gameService.submitGame(sender, roomCode);

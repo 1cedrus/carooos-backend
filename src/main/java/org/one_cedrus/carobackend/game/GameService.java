@@ -56,10 +56,10 @@ public class GameService {
                 Game game = newGame(roomCode);
 
                 template.convertAndSend("/topic/game/" + roomCode,
-                        JoinMessage.builder()
-                                .currentMoves(game.getMoves())
-                                .nextMove(game.getFirstMoveUser())
-                                .build()
+                    JoinMessage.builder()
+                        .currentMoves(game.getMoves())
+                        .nextMove(game.getFirstMoveUser())
+                        .build()
                 );
 
                 endGameIfMoveUserNotMove(game, true);
@@ -81,7 +81,7 @@ public class GameService {
                 finishGame(game.getRoomCode());
 
                 template.convertAndSend("/topic/game/" + game.getRoomCode(),
-                        FinishMessage.builder().winner(game.nextMoveUser()).build());
+                    FinishMessage.builder().winner(game.nextMoveUser()).build());
             }
         }, Instant.now().plus(60, ChronoUnit.SECONDS));
     }
@@ -92,7 +92,7 @@ public class GameService {
             finishGame(game.getRoomCode());
 
             template.convertAndSend("/topic/game/" + game.getRoomCode(),
-                    FinishMessage.builder().winner(game.nextMoveUser()).build());
+                FinishMessage.builder().winner(game.nextMoveUser()).build());
         }, Instant.now().plus(60, ChronoUnit.SECONDS));
     }
 

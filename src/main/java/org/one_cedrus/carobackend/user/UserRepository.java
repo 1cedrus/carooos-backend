@@ -1,5 +1,6 @@
 package org.one_cedrus.carobackend.user;
 
+import org.one_cedrus.carobackend.user.model.User;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -10,5 +11,7 @@ public interface UserRepository extends JpaRepository<User, String> {
     Optional<User> findByUsername(String username);
 
     List<User> findByUsernameStartingWith(String query, Pageable pageable);
+
+    
 }
 
