@@ -3,7 +3,6 @@ package org.one_cedrus.carobackend.friends;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.user.UserService;
 import org.one_cedrus.carobackend.user.model.User;
-import org.one_cedrus.carobackend.user.UserRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.one_cedrus.carobackend.chat.model.UserConversation;
 import org.one_cedrus.carobackend.game.Game;
-import org.one_cedrus.carobackend.user.dto.PubUserInfo;
-import org.one_cedrus.carobackend.user.dto.UserInfo;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
