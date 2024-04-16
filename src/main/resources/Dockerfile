@@ -1,7 +1,0 @@
-FROM postgres:16
-
-ENV POSTGRES_DB caro
-ENV POSTGRES_USER admin
-ENV POSTGRES_PASSWORD mysecretpassword
-
-A LITTLE CHANGES

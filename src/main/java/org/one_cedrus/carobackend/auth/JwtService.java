@@ -1,4 +1,4 @@
-package org.one_cedrus.carobackend.authentication;
+package org.one_cedrus.carobackend.auth;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -20,15 +20,15 @@ public class JwtService {
     }
 
     public String generateToken(
-            Map<String, Object> extraClaims,
-            UserDetails userDetails
+        Map<String, Object> extraClaims,
+        UserDetails userDetails
     ) {
         return Jwts
-                .builder()
-                .addClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
-                .signWith(SignatureAlgorithm.HS256, getSigningKey())
-                .compact();
+            .builder()
+            .addClaims(extraClaims)
+            .setSubject(userDetails.getUsername())
+            .signWith(SignatureAlgorithm.HS256, getSigningKey())
+            .compact();
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
@@ -48,10 +48,10 @@ public class JwtService {
 
     public Claims extractAllClaims(String token) {
         return Jwts
-                .parser()
-                .setSigningKey(getSigningKey())
-                .parseClaimsJws(token)
-                .getBody();
+            .parser()
+            .setSigningKey(getSigningKey())
+            .parseClaimsJws(token)
+            .getBody();
     }
 
     private byte[] getSigningKey() {

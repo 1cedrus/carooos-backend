@@ -1,8 +1,8 @@
-package org.one_cedrus.carobackend.authentication;
+package org.one_cedrus.carobackend.auth;
 
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.authentication.dto.AuthenticationRequest;
-import org.one_cedrus.carobackend.authentication.dto.AuthenticationResponse;
+import org.one_cedrus.carobackend.auth.dto.AuthenticationRequest;
+import org.one_cedrus.carobackend.auth.dto.AuthenticationResponse;
 import org.one_cedrus.carobackend.user.UserService;
 import org.one_cedrus.carobackend.user.model.User;
 import org.one_cedrus.carobackend.user.UserRepository;

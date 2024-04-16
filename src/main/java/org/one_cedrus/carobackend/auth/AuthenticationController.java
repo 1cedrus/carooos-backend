@@ -1,9 +1,9 @@
-package org.one_cedrus.carobackend.authentication;
+package org.one_cedrus.carobackend.auth;
 
 
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.authentication.dto.AuthenticationRequest;
-import org.one_cedrus.carobackend.authentication.dto.AuthenticationResponse;
+import org.one_cedrus.carobackend.auth.dto.AuthenticationRequest;
+import org.one_cedrus.carobackend.auth.dto.AuthenticationResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,7 +28,7 @@ public class AuthenticationController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<AuthenticationResponse> authenticate(
+    public ResponseEntity<AuthenticationResponse> verify(
         @RequestBody String token
     ) {
         return ResponseEntity.ok(authenticationService.verify(token));

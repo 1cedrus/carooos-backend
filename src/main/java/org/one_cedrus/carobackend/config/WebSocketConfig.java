@@ -2,7 +2,7 @@ package org.one_cedrus.carobackend.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.authentication.JwtService;
+import org.one_cedrus.carobackend.auth.JwtService;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;

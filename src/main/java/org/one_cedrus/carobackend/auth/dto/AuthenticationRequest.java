@@ -1,4 +1,4 @@
-package org.one_cedrus.carobackend.authentication.dto;
+package org.one_cedrus.carobackend.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
