@@ -3,6 +3,7 @@ package org.one_cedrus.carobackend.auth;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +14,8 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
-    private final String SECRET_KEY = "l3CYvpkV0LIwuY1h7HBRHwYYYnMBVGFn";
+    @Value("${JWT_SECRET_KEY}")
+    private String SECRET_KEY;
 
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
