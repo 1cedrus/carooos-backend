@@ -1,15 +1,18 @@
 package org.one_cedrus.carobackend.game;
 
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.game.dto.CurrentGame;
+import org.one_cedrus.carobackend.chat.dto.Pagination;
 import org.one_cedrus.carobackend.game.dto.JoinMessage;
 import org.one_cedrus.carobackend.game.dto.MoveMessage;
+import org.one_cedrus.carobackend.user.UserService;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
@@ -22,6 +25,9 @@ import java.util.concurrent.ScheduledFuture;
 public class GameController {
     private final SimpMessagingTemplate template;
     private final GameService gameService;
+    private final GameRepository gameRepository;
+    private final UserService userService;
+
     private final Map<String, ScheduledFuture<?>> timeChecker = new HashMap<>();
 
     @MessageMapping("/game/{roomCode}")
@@ -91,7 +97,25 @@ public class GameController {
 
 
     @GetMapping("/api/game")
-    public ResponseEntity<?> currentGame(Principal principal) {
-        return ResponseEntity.ok().body(CurrentGame.builder().game(gameService.findGameByUsername(principal.getName())).build());
+    public ResponseEntity<?> listGames(
+        Principal principal,
+        @RequestParam(defaultValue = "0") String from,
+        @RequestParam(defaultValue = "10") String perPage
+    ) {
+        var caller = userService.getUser(principal.getName());
+        var fromInt = Integer.parseInt(from);
+        var perPageInt = Integer.parseInt(perPage);
+        var gamesOfCaller = caller.getGames().size();
+
+        var games = gameRepository.findGamesByUsersContainsOrderByIdDesc(caller, PageRequest.of(fromInt, perPageInt));
+
+        return ResponseEntity.ok(
+            Pagination.<Game>builder()
+                .from(fromInt)
+                .perPage(perPageInt)
+                .items(games)
+                .hasNextPage((fromInt + 1) * perPageInt < gamesOfCaller)
+                .total(gamesOfCaller).build()
+        );
     }
 }

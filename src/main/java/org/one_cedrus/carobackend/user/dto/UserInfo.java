@@ -17,6 +17,5 @@ public class UserInfo {
     private Role role;
     private List<String> friends;
     private List<String> requests;
-    private List<Long> games;
     private List<ConversationInfo> conversations;
 }

@@ -1,5 +1,8 @@
 package org.one_cedrus.carobackend.game;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.*;
 import org.one_cedrus.carobackend.user.model.User;
@@ -29,6 +32,8 @@ public class Game {
     private String winner;
 
     @ManyToMany(mappedBy = "games")
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "username")
+    @JsonIdentityReference(alwaysAsId = true)
     private Set<User> users;
 
     private String remainingUser(String user) {

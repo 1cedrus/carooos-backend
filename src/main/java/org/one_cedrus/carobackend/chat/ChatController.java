@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.chat.dto.Pagination;
 import org.one_cedrus.carobackend.chat.dto.RawMessage;
 import org.one_cedrus.carobackend.chat.model.Message;
+import org.one_cedrus.carobackend.chat.repository.ConversationRepository;
 import org.one_cedrus.carobackend.chat.repository.MessageRepository;
 import org.one_cedrus.carobackend.chat.repository.UCRepository;
 import org.one_cedrus.carobackend.chat.service.ConversationService;
@@ -22,6 +23,7 @@ public class ChatController {
     private final ConversationService cService;
     private final MessageRepository messageRepo;
     private final UCRepository uCRepo;
+    private final ConversationRepository conversationRepo;
 
     @PostMapping
     public ResponseEntity<?> sendMessage(
@@ -31,6 +33,9 @@ public class ChatController {
         var uConversation = cService.ensureInConversation(sender, rawMessage.getCid());
         var conversation = uConversation.getConversation();
         var newMessage = Message.create(sender.getUsername(), uConversation.getConversation(), rawMessage.getContent());
+
+        conversation.setNumOfMessages(conversation.getNumOfMessages() + 1);
+        conversationRepo.save(conversation);
 
         messageRepo.save(newMessage);
         cService.spreadMessage(newMessage, conversation);

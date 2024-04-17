@@ -2,7 +2,6 @@ package org.one_cedrus.carobackend.user;
 
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.chat.service.ConversationService;
-import org.one_cedrus.carobackend.game.Game;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
 import org.one_cedrus.carobackend.user.dto.UserInfo;
 import org.one_cedrus.carobackend.user.model.User;
@@ -31,7 +30,6 @@ public class UserService {
             .elo(user.getElo())
             .friends(user.getFriends())
             .requests(user.getRequests())
-            .games(user.getGames().stream().map(Game::getId).toList())
             .conversations(user.getUserConversations().stream().map(o -> cService.getInfo(o.getId())).toList())
             .build();
     }
