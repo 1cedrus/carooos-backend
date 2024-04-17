@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @Builder
 public class ConversationInfo {
-    private Long ucid;
+    private Long cid;
     private List<String> peers;
     private Boolean seen;
     private Message lastMessage;

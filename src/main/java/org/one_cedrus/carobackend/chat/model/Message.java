@@ -1,6 +1,6 @@
 package org.one_cedrus.carobackend.chat.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,13 +17,15 @@ import java.time.LocalDateTime;
 public class Message {
     @Id
     @GeneratedValue
+    @JsonIgnore
     private Long id;
 
     @JoinColumn(table = "_user", name = "username")
     private String sender;
 
     @ManyToOne
-    @JsonIgnore
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+    @JsonIdentityReference(alwaysAsId = true)
     private Conversation conversation;
 
     private String content;

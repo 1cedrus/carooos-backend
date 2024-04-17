@@ -27,12 +27,8 @@ public class ChatController {
     public ResponseEntity<?> sendMessage(
         @RequestBody RawMessage rawMessage
     ) {
-        System.out.println(rawMessage.getSender());
-        System.out.println(rawMessage.getUcid());
-        System.out.println(rawMessage.getContent());
-
         var sender = userService.getUser(rawMessage.getSender());
-        var uConversation = cService.ensureInConversation(sender, rawMessage.getUcid());
+        var uConversation = cService.ensureInConversation(sender, rawMessage.getCid());
         var conversation = uConversation.getConversation();
         var newMessage = Message.create(sender.getUsername(), uConversation.getConversation(), rawMessage.getContent());
 
@@ -40,19 +36,18 @@ public class ChatController {
         cService.spreadMessage(newMessage, conversation);
 
         return ResponseEntity.accepted().build();
-
     }
 
 
-    @GetMapping("/{uConversationId}")
+    @GetMapping("/{conversationId}")
     private ResponseEntity<?> listConversationMessages(
-        @PathVariable String uConversationId,
+        @PathVariable String conversationId,
         @RequestParam(defaultValue = "0") String from,
         @RequestParam(defaultValue = "10") String perPage,
         Principal principal
     ) {
         var sender = userService.getUser(principal.getName());
-        var uConversation = cService.ensureInConversation(sender, Long.parseLong(uConversationId));
+        var uConversation = cService.ensureInConversation(sender, Long.parseLong(conversationId));
         var conversation = uConversation.getConversation();
 
         var fromInt = Integer.parseInt(from);

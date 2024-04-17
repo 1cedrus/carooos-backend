@@ -26,18 +26,12 @@ public class ConversationService {
         var peers = internalUCs.stream().map(o -> o.getUser().getUsername()).toList();
         var lastMessage = messageRepo.getFirstByConversationOrderByIdDesc(uConversation.getConversation());
 
-        return ConversationInfo.builder().ucid(uConversationId).peers(peers).seen(uConversation.getSeen()).lastMessage(lastMessage).build();
+        return ConversationInfo.builder().cid(uConversation.getConversation().getId()).peers(peers).seen(uConversation.getSeen()).lastMessage(lastMessage).build();
     }
 
-    public UserConversation ensureInConversation(User user, Long uConversationId) {
-        var userConversations = user.getUserConversations();
-        var uConversation = uCRepo.getReferenceById(uConversationId);
-
-        if (!userConversations.stream().map(UserConversation::getId).toList().contains(uConversationId)) {
-            throw new RuntimeException("Caller does not in this conversation");
-        }
-
-        return uConversation;
+    public UserConversation ensureInConversation(User user, Long conversationId) {
+        return uCRepo.getUserConversationByUserAndConversation_Id(user, conversationId)
+            .orElseThrow(() -> new RuntimeException("Caller does not in this conversation"));
     }
 
     public void spreadMessage(Message message, Conversation conversation) {
