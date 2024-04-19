@@ -40,10 +40,12 @@ public class ConversationService {
             var gonnaSendUser = o.getUser().getUsername();
             if (userRegistry.getUser(gonnaSendUser) != null) {
                 template.convertAndSendToUser(gonnaSendUser, "/topic/messages", message);
-            } else {
+            }
+            if (!o.getUser().getUsername().equals(message.getSender())) {
                 o.setSeen(false);
-                uCRepo.save(o);
             }
         });
+
+        uCRepo.saveAll(internalUCs);
     }
 }

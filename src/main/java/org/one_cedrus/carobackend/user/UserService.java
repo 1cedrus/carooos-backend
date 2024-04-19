@@ -2,6 +2,7 @@ package org.one_cedrus.carobackend.user;
 
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.chat.service.ConversationService;
+import org.one_cedrus.carobackend.game.GameService;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
 import org.one_cedrus.carobackend.user.dto.UserInfo;
 import org.one_cedrus.carobackend.user.model.User;
@@ -15,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService {
     private final ConversationService cService;
+    private final GameService gameService;
     private final UserRepository userRepo;
 
     public boolean isExisted(String username) {
@@ -23,6 +25,8 @@ public class UserService {
 
     public UserInfo getInfo(String username) {
         var user = getUser(username);
+        var currentGame = gameService.findGameByUsername(username);
+
 
         return UserInfo
             .builder()
@@ -31,6 +35,7 @@ public class UserService {
             .friends(user.getFriends())
             .requests(user.getRequests())
             .conversations(user.getUserConversations().stream().map(o -> cService.getInfo(o.getId())).toList())
+            .currentGame(currentGame)
             .build();
     }
 

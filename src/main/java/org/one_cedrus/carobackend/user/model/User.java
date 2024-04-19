@@ -33,7 +33,7 @@ public class User implements UserDetails {
     @CollectionTable(joinColumns = @JoinColumn(name = "username"))
     private List<String> requests = new ArrayList<>();
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<Game> games = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)

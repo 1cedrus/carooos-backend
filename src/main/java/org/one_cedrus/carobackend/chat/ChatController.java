@@ -30,7 +30,7 @@ public class ChatController {
         @RequestBody RawMessage rawMessage
     ) {
         var sender = userService.getUser(rawMessage.getSender());
-        var uConversation = cService.ensureInConversation(sender, rawMessage.getCid());
+        var uConversation = cService.ensureInConversation(sender, rawMessage.getConversation());
         var conversation = uConversation.getConversation();
         var newMessage = Message.create(sender.getUsername(), uConversation.getConversation(), rawMessage.getContent());
 

@@ -1,16 +1,12 @@
 package org.one_cedrus.carobackend.game;
 
-import com.fasterxml.jackson.annotation.JsonIdentityInfo;
-import com.fasterxml.jackson.annotation.JsonIdentityReference;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.one_cedrus.carobackend.user.model.User;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.IntStream;
 
 @Data
@@ -31,10 +27,11 @@ public class Game {
     private String firstMoveUser;
     private String winner;
 
+    private LocalDateTime playedAt;
+
     @ManyToMany(mappedBy = "games")
-    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "username")
-    @JsonIdentityReference(alwaysAsId = true)
-    private Set<User> users;
+    @JsonIgnore
+    private Set<User> users = new HashSet<>();
 
     private String remainingUser(String user) {
         return user.equals(firstUser()) ? secondUser() : firstUser();
@@ -51,6 +48,8 @@ public class Game {
             .roomCode(roomCode)
             .moves(new ArrayList<>())
             .firstMoveUser(randomFirstMove(roomCode))
+            .users(new HashSet<>())
+            .playedAt(LocalDateTime.now())
             .build();
     }
 
@@ -125,6 +124,7 @@ public class Game {
         return roomCodeToSecondUser(roomCode);
     }
 
+    @JsonIgnore
     public String getLoser() {
         return winner != null ? remainingUser(winner) : null;
     }

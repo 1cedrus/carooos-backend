@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.auth.dto.AuthenticationRequest;
 import org.one_cedrus.carobackend.auth.dto.AuthenticationResponse;
 import org.one_cedrus.carobackend.user.UserService;
+import org.one_cedrus.carobackend.user.model.Role;
 import org.one_cedrus.carobackend.user.model.User;
 import org.one_cedrus.carobackend.user.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,6 +41,7 @@ public class AuthenticationService {
         var user = User.builder()
             .username(username)
             .password(passwordEncoder.encode(password))
+            .role(Role.ROLE_USER)
             .elo(0)
             .build();
         userRepo.save(user);

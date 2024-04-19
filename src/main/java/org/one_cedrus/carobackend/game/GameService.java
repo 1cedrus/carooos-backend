@@ -5,8 +5,10 @@ import org.one_cedrus.carobackend.game.dto.DrawMessage;
 import org.one_cedrus.carobackend.game.dto.FinishMessage;
 import org.one_cedrus.carobackend.game.dto.JoinMessage;
 import org.one_cedrus.carobackend.user.UserRepository;
+import org.one_cedrus.carobackend.user.model.User;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -42,31 +44,31 @@ public class GameService {
     }
 
     public void initGame(String roomCode) {
+        String firstUser = Game.roomCodeToFirstUser(roomCode);
+        String secondUser = Game.roomCodeToSecondUser(roomCode);
+
+        boolean isBothUsersJoined = findGameByUsername(firstUser).equals(roomCode) && findGameByUsername(secondUser).equals(roomCode);
+
+        if (isBothUsersJoined) {
+            Game game = newGame(roomCode);
+
+            template.convertAndSend("/topic/game/" + roomCode,
+                JoinMessage.builder()
+                    .currentMoves(game.getMoves())
+                    .nextMove(game.getFirstMoveUser())
+                    .build()
+            );
+
+            endGameIfMoveUserNotMove(game, true);
+        }
+
         if (onInitGame.containsKey(roomCode)) {
             return;
         }
 
-        String firstUser = Game.roomCodeToFirstUser(roomCode);
-        String secondUser = Game.roomCodeToSecondUser(roomCode);
-
         var initGame = taskScheduler.schedule(() -> {
-            boolean isBothUsersJoined = findGameByUsername(firstUser).equals(roomCode) && findGameByUsername(secondUser).equals(roomCode);
-
-            if (isBothUsersJoined) {
-                Game game = newGame(roomCode);
-
-                template.convertAndSend("/topic/game/" + roomCode,
-                    JoinMessage.builder()
-                        .currentMoves(game.getMoves())
-                        .nextMove(game.getFirstMoveUser())
-                        .build()
-                );
-
-                endGameIfMoveUserNotMove(game, true);
-            } else {
-                unSubmitGame(firstUser, roomCode);
-                unSubmitGame(secondUser, roomCode);
-            }
+            unSubmitGame(firstUser, roomCode);
+            unSubmitGame(secondUser, roomCode);
 
             onInitGame.remove(roomCode);
         }, Instant.now().plus(5, ChronoUnit.SECONDS));
@@ -119,12 +121,25 @@ public class GameService {
         return Optional.empty();
     }
 
+    private User getUser(String username) {
+        return userRepo.findByUsername(username).orElseThrow(
+            () -> new UsernameNotFoundException(String.format("%s does not existed", username))
+        );
+    }
+
     private void drawGame(String roomCode) {
         Game game = games.get(roomCode);
 
         unSubmitGame(game.firstUser(), roomCode);
         unSubmitGame(game.secondUser(), roomCode);
 
+        var firstUser = getUser(game.firstUser());
+        var secondUser = getUser(game.secondUser());
+
+        firstUser.getGames().add(game);
+        secondUser.getGames().add(game);
+
+        userRepo.saveAll(List.of(firstUser, secondUser));
         gameRepo.save(game);
         games.remove(roomCode);
     }
@@ -135,8 +150,8 @@ public class GameService {
         unSubmitGame(game.firstUser(), roomCode);
         unSubmitGame(game.secondUser(), roomCode);
 
-        var winner = userRepo.findByUsername(game.getWinner()).orElseThrow();
-        var loser = userRepo.findByUsername(game.getLoser()).orElseThrow();
+        var winner = getUser(game.getWinner());
+        var loser = getUser(game.getLoser());
 
         if (winner.getElo() > loser.getElo()) {
             if (winner.getElo() - loser.getElo() >= 50) {
@@ -156,15 +171,17 @@ public class GameService {
             }
         }
 
-        userRepo.save(winner);
-        userRepo.save(loser);
+        winner.getGames().add(game);
+        loser.getGames().add(game);
 
+        userRepo.saveAll(List.of(winner, loser));
         gameRepo.save(game);
         games.remove(roomCode);
     }
 
     private Game newGame(String roomCode) {
         Game game = Game.newGame(roomCode);
+
 
         games.put(roomCode, game);
         return game;

@@ -7,6 +7,6 @@ import lombok.Setter;
 @Setter
 public class RawMessage {
     private String sender;
-    private Long cid;
+    private Long conversation;
     private String content;
 }
