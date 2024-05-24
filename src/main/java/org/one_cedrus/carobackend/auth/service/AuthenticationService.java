@@ -48,9 +48,7 @@ public class AuthenticationService {
     }
 
     public void verifyResetToken(String email, String submittedToken) {
-        var user = userService.getUser(email);
-
-        var maybeToken = redisTemplate.opsForValue().get(user.getUsername());
+        var maybeToken = redisTemplate.opsForValue().get(email);
 
         if (maybeToken == null || !maybeToken.equals(submittedToken)) {
             throw new RuntimeException("Invalid token");
@@ -61,22 +59,23 @@ public class AuthenticationService {
     public void resetPassword(String email) {
         var user = userService.getUser(email);
 
-        if (redisTemplate.opsForValue().get(user.getUsername()) != null) {
+        if (redisTemplate.opsForValue().get(email) != null) {
             throw new RuntimeException("Wait for 5 minutes or try later");
         }
 
         var token = generateResetToken().toString();
         emailService.sendEmail(
-            user.getEmail(),
+            email,
             "Reset Password Token",
             String.format(
                 "Your reset password token is %s.\n If you do not request this, please ignore this email!",
                 token
             )
         );
+
         redisTemplate
             .opsForValue()
-            .setIfAbsent(user.getUsername(), token, 5, TimeUnit.MINUTES);
+            .setIfAbsent(email, token, 5, TimeUnit.MINUTES);
     }
 
     public void changePassword(String username, ChangePasswordRequest request) {
