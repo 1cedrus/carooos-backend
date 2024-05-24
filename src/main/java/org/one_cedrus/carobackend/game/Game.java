@@ -2,12 +2,11 @@ package org.one_cedrus.carobackend.game;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
-import org.one_cedrus.carobackend.user.model.User;
-
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.IntStream;
+import lombok.*;
+import org.one_cedrus.carobackend.user.model.User;
 
 @Data
 @Entity
@@ -15,6 +14,7 @@ import java.util.stream.IntStream;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Game {
+
     @Id
     @GeneratedValue
     private Long id;
@@ -24,6 +24,7 @@ public class Game {
 
     @Convert(converter = MovesToStringConverter.class)
     private List<Short> moves;
+
     private String firstMoveUser;
     private String winner;
 
@@ -63,17 +64,20 @@ public class Game {
 
     public boolean isFinish() {
         int lastMoveIndex = moves.size() - 1;
-        List<Short> movesOfPlayer = IntStream.range(0, lastMoveIndex).filter(i -> i % 2 == lastMoveIndex % 2).mapToObj(i -> moves.get(i)).toList();
+        List<Short> movesOfPlayer = IntStream.range(0, lastMoveIndex)
+            .filter(i -> i % 2 == lastMoveIndex % 2)
+            .mapToObj(i -> moves.get(i))
+            .toList();
 
         boolean isFinish =
             // Vertical
-            calculate(movesOfPlayer, (short) 20)
-                // Horizontal
-                || calculate(movesOfPlayer, (short) 1)
-                // From top left to bottom right
-                || calculate(movesOfPlayer, (short) 21)
-                // From top right to bottom left
-                || calculate(movesOfPlayer, (short) 19);
+            calculate(movesOfPlayer, (short) 20) ||
+            // Horizontal
+            calculate(movesOfPlayer, (short) 1) ||
+            // From top left to bottom right
+            calculate(movesOfPlayer, (short) 21) ||
+            // From top right to bottom left
+            calculate(movesOfPlayer, (short) 19);
 
         if (isFinish) {
             setWinner(nextMoveUser());
@@ -109,7 +113,9 @@ public class Game {
     }
 
     public String moveUser() {
-        return moves.size() % 2 == 0 ? firstMoveUser : remainingUser(firstMoveUser);
+        return moves.size() % 2 == 0
+            ? firstMoveUser
+            : remainingUser(firstMoveUser);
     }
 
     public String nextMoveUser() {
@@ -128,6 +134,4 @@ public class Game {
     public String getLoser() {
         return winner != null ? remainingUser(winner) : null;
     }
-
 }
-

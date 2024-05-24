@@ -1,5 +1,9 @@
 package org.one_cedrus.carobackend.game;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.concurrent.ScheduledFuture;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.game.dto.DrawMessage;
 import org.one_cedrus.carobackend.game.dto.FinishMessage;
@@ -11,14 +15,10 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.concurrent.ScheduledFuture;
-
 @Service
 @RequiredArgsConstructor
 public class GameService {
+
     private final GameRepository gameRepo;
     private final UserRepository userRepo;
     private final TaskScheduler taskScheduler;
@@ -32,11 +32,17 @@ public class GameService {
 
         if (game.isFinish()) {
             finishGame(roomCode);
-            template.convertAndSend("/topic/game/" + roomCode, FinishMessage.builder().winner(game.getWinner()).build());
+            template.convertAndSend(
+                "/topic/game/" + roomCode,
+                FinishMessage.builder().winner(game.getWinner()).build()
+            );
             return true;
         } else if (game.isDraw()) {
             drawGame(roomCode);
-            template.convertAndSend("/topic/game/" + roomCode, DrawMessage.builder().build());
+            template.convertAndSend(
+                "/topic/game/" + roomCode,
+                DrawMessage.builder().build()
+            );
             return true;
         }
 
@@ -47,12 +53,15 @@ public class GameService {
         String firstUser = Game.roomCodeToFirstUser(roomCode);
         String secondUser = Game.roomCodeToSecondUser(roomCode);
 
-        boolean isBothUsersJoined = findGameByUsername(firstUser).equals(roomCode) && findGameByUsername(secondUser).equals(roomCode);
+        boolean isBothUsersJoined =
+            findGameByUsername(firstUser).equals(roomCode) &&
+            findGameByUsername(secondUser).equals(roomCode);
 
         if (isBothUsersJoined) {
             Game game = newGame(roomCode);
 
-            template.convertAndSend("/topic/game/" + roomCode,
+            template.convertAndSend(
+                "/topic/game/" + roomCode,
                 JoinMessage.builder()
                     .currentMoves(game.getMoves())
                     .nextMove(game.getFirstMoveUser())
@@ -66,38 +75,52 @@ public class GameService {
             return;
         }
 
-        var initGame = taskScheduler.schedule(() -> {
-            unSubmitGame(firstUser, roomCode);
-            unSubmitGame(secondUser, roomCode);
+        var initGame = taskScheduler.schedule(
+            () -> {
+                unSubmitGame(firstUser, roomCode);
+                unSubmitGame(secondUser, roomCode);
 
-            onInitGame.remove(roomCode);
-        }, Instant.now().plus(5, ChronoUnit.SECONDS));
+                onInitGame.remove(roomCode);
+            },
+            Instant.now().plus(5, ChronoUnit.SECONDS)
+        );
 
         onInitGame.put(roomCode, initGame);
     }
 
     public void endGameIfMoveUserNotMove(Game game, boolean _firstMove) {
-        taskScheduler.schedule(() -> {
-            if (game.getMoves().isEmpty()) {
-                game.setWinner(game.nextMoveUser());
-                finishGame(game.getRoomCode());
+        taskScheduler.schedule(
+            () -> {
+                if (game.getMoves().isEmpty()) {
+                    game.setWinner(game.nextMoveUser());
+                    finishGame(game.getRoomCode());
 
-                template.convertAndSend("/topic/game/" + game.getRoomCode(),
-                    FinishMessage.builder().winner(game.nextMoveUser()).build());
-            }
-        }, Instant.now().plus(60, ChronoUnit.SECONDS));
+                    template.convertAndSend(
+                        "/topic/game/" + game.getRoomCode(),
+                        FinishMessage.builder()
+                            .winner(game.nextMoveUser())
+                            .build()
+                    );
+                }
+            },
+            Instant.now().plus(60, ChronoUnit.SECONDS)
+        );
     }
 
     public ScheduledFuture<?> endGameIfMoveUserNotMove(Game game) {
-        return taskScheduler.schedule(() -> {
-            game.setWinner(game.nextMoveUser());
-            finishGame(game.getRoomCode());
+        return taskScheduler.schedule(
+            () -> {
+                game.setWinner(game.nextMoveUser());
+                finishGame(game.getRoomCode());
 
-            template.convertAndSend("/topic/game/" + game.getRoomCode(),
-                FinishMessage.builder().winner(game.nextMoveUser()).build());
-        }, Instant.now().plus(60, ChronoUnit.SECONDS));
+                template.convertAndSend(
+                    "/topic/game/" + game.getRoomCode(),
+                    FinishMessage.builder().winner(game.nextMoveUser()).build()
+                );
+            },
+            Instant.now().plus(60, ChronoUnit.SECONDS)
+        );
     }
-
 
     public void submitGame(String username, String id) {
         usernameToGame.put(username, id);
@@ -122,9 +145,14 @@ public class GameService {
     }
 
     private User getUser(String username) {
-        return userRepo.findByUsername(username).orElseThrow(
-            () -> new UsernameNotFoundException(String.format("%s does not existed", username))
-        );
+        return userRepo
+            .findByUsername(username)
+            .orElseThrow(
+                () ->
+                    new UsernameNotFoundException(
+                        String.format("%s does not existed", username)
+                    )
+            );
     }
 
     private void drawGame(String roomCode) {
@@ -181,7 +209,6 @@ public class GameService {
 
     private Game newGame(String roomCode) {
         Game game = Game.newGame(roomCode);
-
 
         games.put(roomCode, game);
         return game;

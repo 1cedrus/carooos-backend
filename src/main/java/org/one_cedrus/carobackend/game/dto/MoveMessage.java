@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MoveMessage {
+
     private final GameMessageType type = GameMessageType.Move;
     private Short move;
     private String nextMove;

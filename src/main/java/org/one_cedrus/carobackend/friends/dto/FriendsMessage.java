@@ -8,6 +8,7 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class FriendsMessage {
+
     private FriendsMessageType type;
     private String username;
 }

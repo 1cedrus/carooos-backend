@@ -1,4 +1,9 @@
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: carroosservices@gmail.com
+    password: eyyf kkrh bpnf msnq
   datasource:
     url: jdbc:postgresql://${DEV_POSTGRESQL_DATABASE_HOST}/postgres
     username: ${DEV_POSTGRESQL_DATABASE_USERNAME}
@@ -9,9 +14,16 @@ spring:
     properties:
       hibernate:
         format_sql: true
-    show-sql: true
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST}
+      port: ${SPRING_REDIS_PORT}
 
 server:
   port: 9000
+
+spring.mail.properties.mail.smtp.auth: true
+spring.mail.properties.mail.smtp.starttls.enable: true
+

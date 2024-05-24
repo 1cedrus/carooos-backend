@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class ConversationService {
+
     private final SimpMessagingTemplate template;
     private final SimpUserRegistry userRegistry;
     private final UCRepository uCRepo;
@@ -22,24 +23,49 @@ public class ConversationService {
 
     public ConversationInfo getInfo(Long uConversationId) {
         var uConversation = uCRepo.getReferenceById(uConversationId);
-        var internalUCs = uCRepo.findUserConversationsByConversation(uConversation.getConversation());
-        var peers = internalUCs.stream().map(o -> o.getUser().getUsername()).toList();
-        var lastMessage = messageRepo.getFirstByConversationOrderByIdDesc(uConversation.getConversation());
+        var internalUCs = uCRepo.findUserConversationsByConversation(
+            uConversation.getConversation()
+        );
+        var peers = internalUCs
+            .stream()
+            .map(o -> o.getUser().getUsername())
+            .toList();
+        var lastMessage = messageRepo.getFirstByConversationOrderByIdDesc(
+            uConversation.getConversation()
+        );
 
-        return ConversationInfo.builder().cid(uConversation.getConversation().getId()).peers(peers).seen(uConversation.getSeen()).lastMessage(lastMessage).build();
+        return ConversationInfo.builder()
+            .cid(uConversation.getConversation().getId())
+            .peers(peers)
+            .seen(uConversation.getSeen())
+            .lastMessage(lastMessage)
+            .build();
     }
 
-    public UserConversation ensureInConversation(User user, Long conversationId) {
-        return uCRepo.getUserConversationByUserAndConversation_Id(user, conversationId)
-            .orElseThrow(() -> new RuntimeException("Caller does not in this conversation"));
+    public UserConversation ensureInConversation(
+        User user,
+        Long conversationId
+    ) {
+        return uCRepo
+            .getUserConversationByUserAndConversation_Id(user, conversationId)
+            .orElseThrow(
+                () ->
+                    new RuntimeException("Caller does not in this conversation")
+            );
     }
 
     public void spreadMessage(Message message, Conversation conversation) {
-        var internalUCs = uCRepo.findUserConversationsByConversation(conversation);
+        var internalUCs = uCRepo.findUserConversationsByConversation(
+            conversation
+        );
         internalUCs.forEach(o -> {
             var gonnaSendUser = o.getUser().getUsername();
             if (userRegistry.getUser(gonnaSendUser) != null) {
-                template.convertAndSendToUser(gonnaSendUser, "/topic/messages", message);
+                template.convertAndSendToUser(
+                    gonnaSendUser,
+                    "/topic/messages",
+                    message
+                );
             }
             if (!o.getUser().getUsername().equals(message.getSender())) {
                 o.setSeen(false);

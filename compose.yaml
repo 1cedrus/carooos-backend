@@ -1,0 +1,28 @@
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: myadmin
+      POSTGRES_PASSWORD: mysecretpassword
+  redis:
+    image: redis:alpine
+    ports:
+      - '6379:6379'
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9000:9000"
+    environment:
+      DEV_POSTGRESQL_DATABASE_HOST: postgres
+      DEV_POSTGRESQL_DATABASE_USERNAME: myadmin
+      DEV_POSTGRESQL_DATABASE_PASSWORD: mysecretpassword
+      JWT_SECRET_KEY: l3CYvpkV0LIwuY1h7HBRHwYYYnMBVGFn
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      ACTIVE_PROFILE: dev
+    depends_on:
+      - redis
+      - postgres

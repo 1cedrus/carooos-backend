@@ -1,9 +1,9 @@
 package org.one_cedrus.carobackend.auth;
 
-
+import java.security.Principal;
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.auth.dto.AuthenticationRequest;
-import org.one_cedrus.carobackend.auth.dto.AuthenticationResponse;
+import org.one_cedrus.carobackend.auth.dto.*;
+import org.one_cedrus.carobackend.game.GameRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthenticationController {
+
     private final AuthenticationService authenticationService;
+    private final GameRepository gameRepository;
 
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(
-        @RequestBody AuthenticationRequest request
+        @RequestBody RegisterRequest request
     ) {
         return ResponseEntity.ok(authenticationService.register(request));
     }
@@ -32,5 +34,45 @@ public class AuthenticationController {
         @RequestBody String token
     ) {
         return ResponseEntity.ok(authenticationService.verify(token));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<AuthenticationResponse> changePassword(
+        @RequestBody ChangePasswordRequest request,
+        Principal principal
+    ) {
+        authenticationService.changePassword(principal.getName(), request);
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<AuthenticationResponse> resetPassword(
+        @RequestBody ResetPasswordRequest request
+    ) {
+        authenticationService.resetPassword(request.getEmail());
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/reset-password/verify")
+    public ResponseEntity<AuthenticationResponse> verifyToken(
+        @RequestBody ResetPasswordRequest request
+    ) {
+        authenticationService.verifyResetToken(
+            request.getEmail(),
+            request.getToken()
+        );
+        return ResponseEntity.accepted().build();
+    }
+
+    @PostMapping("/reset-password/complete")
+    public ResponseEntity<AuthenticationResponse> completeReset(
+        @RequestBody ResetPasswordRequest request
+    ) {
+        authenticationService.changePasswordWithToken(
+            request.getEmail(),
+            request.getToken(),
+            request.getNewPassword()
+        );
+        return ResponseEntity.accepted().build();
     }
 }

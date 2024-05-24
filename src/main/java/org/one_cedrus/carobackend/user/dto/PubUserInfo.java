@@ -8,6 +8,7 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class PubUserInfo {
+
     private String username;
     private Integer elo;
 }

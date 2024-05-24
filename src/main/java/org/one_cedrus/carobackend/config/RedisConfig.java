@@ -1,0 +1,32 @@
+package org.one_cedrus.carobackend.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+
+@Configuration
+public class RedisConfig {
+
+    @Value("${SPRING_REDIS_HOST}")
+    private String redisHost;
+
+    @Value("${SPRING_REDIS_PORT}")
+    private Integer redisPort;
+
+    @Bean
+    LettuceConnectionFactory lettuceConnectionFactory() {
+        return new LettuceConnectionFactory(
+            new RedisStandaloneConfiguration(redisHost, redisPort)
+        );
+    }
+
+    @Bean
+    public RedisTemplate<String, String> redisTemplate() {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
+        template.setConnectionFactory(lettuceConnectionFactory());
+        return template;
+    }
+}

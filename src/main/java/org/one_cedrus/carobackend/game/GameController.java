@@ -1,5 +1,9 @@
 package org.one_cedrus.carobackend.game;
 
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.chat.dto.Pagination;
 import org.one_cedrus.carobackend.game.dto.JoinMessage;
@@ -15,14 +19,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.Principal;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ScheduledFuture;
-
 @RestController
 @RequiredArgsConstructor
 public class GameController {
+
     private final SimpMessagingTemplate template;
     private final GameService gameService;
     private final GameRepository gameRepository;
@@ -37,7 +37,9 @@ public class GameController {
         Principal principal
     ) {
         String caller = principal.getName();
-        Game game = gameService.findPlayingGame(roomCode).orElseThrow(() -> new RuntimeException("Game is not existed"));
+        Game game = gameService
+            .findPlayingGame(roomCode)
+            .orElseThrow(() -> new RuntimeException("Game is not existed"));
 
         Short move = Short.parseShort(payload);
         String moveUser = game.moveUser();
@@ -52,11 +54,10 @@ public class GameController {
         }
 
         game.getMoves().add(move);
-        template.convertAndSend("/topic/game/" + roomCode,
-            MoveMessage.builder()
-                .move(move)
-                .nextMove(nextMoveUser)
-                .build());
+        template.convertAndSend(
+            "/topic/game/" + roomCode,
+            MoveMessage.builder().move(move).nextMove(nextMoveUser).build()
+        );
 
         if (timeChecker.containsKey(roomCode)) {
             timeChecker.get(roomCode).cancel(false);
@@ -65,7 +66,10 @@ public class GameController {
         if (gameService.endOrDraw(roomCode)) {
             timeChecker.remove(roomCode);
         } else {
-            timeChecker.put(roomCode, gameService.endGameIfMoveUserNotMove(game));
+            timeChecker.put(
+                roomCode,
+                gameService.endGameIfMoveUserNotMove(game)
+            );
         }
     }
 
@@ -79,22 +83,25 @@ public class GameController {
         String secondUser = Game.roomCodeToSecondUser(roomCode);
 
         if (!sender.equals(firstUser) && !sender.equals(secondUser)) {
-            throw new RuntimeException(String.format("%s does not have authorization", sender));
+            throw new RuntimeException(
+                String.format("%s does not have authorization", sender)
+            );
         }
 
         if (gameService.findPlayingGame(roomCode).isPresent()) {
             Game game = gameService.findPlayingGame(roomCode).get();
-            template.convertAndSend("/topic/game/" + roomCode, JoinMessage.builder()
-                .currentMoves(game.getMoves())
-                .nextMove(game.nextMoveUser())
-                .build()
+            template.convertAndSend(
+                "/topic/game/" + roomCode,
+                JoinMessage.builder()
+                    .currentMoves(game.getMoves())
+                    .nextMove(game.nextMoveUser())
+                    .build()
             );
         } else {
             gameService.submitGame(sender, roomCode);
             gameService.initGame(roomCode);
         }
     }
-
 
     @GetMapping("/api/game")
     public ResponseEntity<?> listGames(
@@ -107,7 +114,10 @@ public class GameController {
         var perPageInt = Integer.parseInt(perPage);
         var gamesOfCaller = caller.getGames().size();
 
-        var games = gameRepository.findGamesByUsersContainsOrderByIdDesc(caller, PageRequest.of(fromInt, perPageInt));
+        var games = gameRepository.findGamesByUsersContainsOrderByIdDesc(
+            caller,
+            PageRequest.of(fromInt, perPageInt)
+        );
 
         return ResponseEntity.ok(
             Pagination.<Game>builder()
@@ -115,7 +125,8 @@ public class GameController {
                 .perPage(perPageInt)
                 .items(games)
                 .hasNextPage((fromInt + 1) * perPageInt < gamesOfCaller)
-                .total(gamesOfCaller).build()
+                .total(gamesOfCaller)
+                .build()
         );
     }
 }

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.one_cedrus.carobackend.user.model.User;
 
-
 @Entity
 @Getter
 @Setter
@@ -12,6 +11,7 @@ import org.one_cedrus.carobackend.user.model.User;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserConversation {
+
     @Id
     @GeneratedValue
     private Long id;
@@ -24,7 +24,14 @@ public class UserConversation {
 
     private Boolean seen;
 
-    public static UserConversation create(User user, Conversation conversation) {
-        return UserConversation.builder().user(user).conversation(conversation).seen(true).build();
+    public static UserConversation create(
+        User user,
+        Conversation conversation
+    ) {
+        return UserConversation.builder()
+            .user(user)
+            .conversation(conversation)
+            .seen(true)
+            .build();
     }
 }

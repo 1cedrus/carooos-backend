@@ -1,14 +1,12 @@
 package org.one_cedrus.carobackend.chat.model;
 
-
 import jakarta.persistence.*;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Data
 @Entity
@@ -16,6 +14,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Conversation {
+
     @Id
     @GeneratedValue
     private Long id;

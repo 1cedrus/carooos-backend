@@ -1,5 +1,6 @@
 package org.one_cedrus.carobackend.chat;
 
+import java.security.Principal;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.chat.dto.Pagination;
 import org.one_cedrus.carobackend.chat.dto.RawMessage;
@@ -13,12 +14,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.security.Principal;
-
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/messages")
 public class ChatController {
+
     private final UserService userService;
     private final ConversationService cService;
     private final MessageRepository messageRepo;
@@ -26,13 +26,18 @@ public class ChatController {
     private final ConversationRepository conversationRepo;
 
     @PostMapping
-    public ResponseEntity<?> sendMessage(
-        @RequestBody RawMessage rawMessage
-    ) {
+    public ResponseEntity<?> sendMessage(@RequestBody RawMessage rawMessage) {
         var sender = userService.getUser(rawMessage.getSender());
-        var uConversation = cService.ensureInConversation(sender, rawMessage.getConversation());
+        var uConversation = cService.ensureInConversation(
+            sender,
+            rawMessage.getConversation()
+        );
         var conversation = uConversation.getConversation();
-        var newMessage = Message.create(sender.getUsername(), uConversation.getConversation(), rawMessage.getContent());
+        var newMessage = Message.create(
+            sender.getUsername(),
+            uConversation.getConversation(),
+            rawMessage.getContent()
+        );
 
         conversation.setNumOfMessages(conversation.getNumOfMessages() + 1);
         conversationRepo.save(conversation);
@@ -43,7 +48,6 @@ public class ChatController {
         return ResponseEntity.accepted().build();
     }
 
-
     @GetMapping("/{conversationId}")
     private ResponseEntity<?> listConversationMessages(
         @PathVariable String conversationId,
@@ -52,13 +56,20 @@ public class ChatController {
         Principal principal
     ) {
         var sender = userService.getUser(principal.getName());
-        var uConversation = cService.ensureInConversation(sender, Long.parseLong(conversationId));
+        var uConversation = cService.ensureInConversation(
+            sender,
+            Long.parseLong(conversationId)
+        );
         var conversation = uConversation.getConversation();
 
         var fromInt = Integer.parseInt(from);
         var perPageInt = Integer.parseInt(perPage);
         var numOfMessages = conversation.getNumOfMessages();
-        var messages = messageRepo.getChatMessagesByConversationOrderByTimeStampDesc(conversation, PageRequest.of(fromInt, perPageInt));
+        var messages =
+            messageRepo.getChatMessagesByConversationOrderByTimeStampDesc(
+                conversation,
+                PageRequest.of(fromInt, perPageInt)
+            );
 
         uConversation.setSeen(true);
         uCRepo.save(uConversation);

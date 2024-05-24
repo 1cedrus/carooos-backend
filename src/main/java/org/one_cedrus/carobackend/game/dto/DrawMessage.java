@@ -8,5 +8,6 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class DrawMessage {
+
     private final GameMessageType type = GameMessageType.Draw;
 }

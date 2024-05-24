@@ -1,14 +1,13 @@
 package org.one_cedrus.carobackend.user.model;
 
 import jakarta.persistence.*;
+import java.util.*;
 import lombok.*;
 import org.one_cedrus.carobackend.chat.model.UserConversation;
 import org.one_cedrus.carobackend.game.Game;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.*;
 
 @Data
 @Entity
@@ -17,9 +16,12 @@ import java.util.*;
 @AllArgsConstructor
 @Table(name = "_users")
 public class User implements UserDetails {
+
     @Id
     private String username;
+
     private String password;
+    private String email;
     private Integer elo;
 
     @Enumerated(EnumType.STRING)
@@ -38,7 +40,6 @@ public class User implements UserDetails {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private Set<UserConversation> userConversations = new HashSet<>();
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
