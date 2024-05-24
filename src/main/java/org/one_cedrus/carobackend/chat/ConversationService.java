@@ -1,4 +1,4 @@
-package org.one_cedrus.carobackend.chat.service;
+package org.one_cedrus.carobackend.chat;
 
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.chat.dto.ConversationInfo;

@@ -1,4 +1,4 @@
-package org.one_cedrus.carobackend.auth;
+package org.one_cedrus.carobackend.auth.service;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;

@@ -1,20 +1,19 @@
-package org.one_cedrus.carobackend.auth;
+package org.one_cedrus.carobackend.auth.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 @Service
 public class JwtService {
+
     @Value("${JWT_SECRET_KEY}")
     private String SECRET_KEY;
 

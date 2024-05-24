@@ -2,7 +2,7 @@ package org.one_cedrus.carobackend.user;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.chat.service.ConversationService;
+import org.one_cedrus.carobackend.chat.ConversationService;
 import org.one_cedrus.carobackend.game.GameService;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
 import org.one_cedrus.carobackend.user.dto.UserInfo;

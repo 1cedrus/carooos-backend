@@ -3,6 +3,7 @@ package org.one_cedrus.carobackend.auth;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.auth.dto.*;
+import org.one_cedrus.carobackend.auth.service.AuthenticationService;
 import org.one_cedrus.carobackend.game.GameRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

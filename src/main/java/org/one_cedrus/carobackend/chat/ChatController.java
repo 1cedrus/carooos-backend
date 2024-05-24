@@ -8,7 +8,6 @@ import org.one_cedrus.carobackend.chat.model.Message;
 import org.one_cedrus.carobackend.chat.repository.ConversationRepository;
 import org.one_cedrus.carobackend.chat.repository.MessageRepository;
 import org.one_cedrus.carobackend.chat.repository.UCRepository;
-import org.one_cedrus.carobackend.chat.service.ConversationService;
 import org.one_cedrus.carobackend.user.UserService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
