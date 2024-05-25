@@ -14,7 +14,9 @@ public class UserInfo {
 
     private String username;
     private Integer elo;
+    private String email;
     private Role role;
+    private String profilePicUrl;
     private String currentGame;
     private List<String> friends;
     private List<String> requests;

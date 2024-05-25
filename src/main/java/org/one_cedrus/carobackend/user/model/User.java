@@ -24,6 +24,8 @@ public class User implements UserDetails {
     private String email;
     private Integer elo;
 
+    private String imageUrl;
+
     @Enumerated(EnumType.STRING)
     private Role role = Role.ROLE_USER;
 

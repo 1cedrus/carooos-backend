@@ -9,26 +9,39 @@ import org.one_cedrus.carobackend.game.GameService;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
 import org.one_cedrus.carobackend.user.dto.UserInfo;
 import org.one_cedrus.carobackend.user.model.User;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
-    private static final Logger log = LoggerFactory.getLogger(
-        UserService.class
-    );
     private final ConversationService cService;
     private final GameService gameService;
+    private final ImageService imageService;
     private final UserRepository userRepo;
     private final RedisTemplate<String, String> redisTemplate;
     private final SimpMessagingTemplate simpMessagingTemplate;
+
+    public void updateEmail(String username, String email) {
+        ensureValidEmail(email);
+        var user = getUser(username);
+
+        user.setEmail(email);
+        userRepo.save(user);
+    }
+
+    public void setProfilePic(String username, MultipartFile file) {
+        var user = getUser(username);
+        var picName = imageService.uploadImage(file);
+
+        user.setImageUrl(picName);
+        userRepo.save(user);
+    }
 
     public boolean isExisted(String usernameOrEmail) {
         return userRepo.existsByUsernameOrEmail(
@@ -54,6 +67,8 @@ public class UserService {
                     .toList()
             )
             .currentGame(currentGame)
+            .email(user.getEmail())
+            .profilePicUrl(user.getImageUrl())
             .build();
     }
 
@@ -63,6 +78,7 @@ public class UserService {
         return PubUserInfo.builder()
             .username(username)
             .elo(user.getElo())
+            .imageUrl(user.getImageUrl())
             .build();
     }
 
@@ -86,6 +102,7 @@ public class UserService {
                     PubUserInfo.builder()
                         .username(user.getUsername())
                         .elo(user.getElo())
+                        .imageUrl(user.getImageUrl())
                         .build()
             )
             .toList();
@@ -128,5 +145,15 @@ public class UserService {
                             .build()
                     )
             );
+    }
+
+    private void ensureValidEmail(String email) {
+        if (isExisted(email)) {
+            throw new RuntimeException("Submitted email is existed");
+        } else if (
+            !email.matches("^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$")
+        ) {
+            throw new RuntimeException("Email is not valid");
+        }
     }
 }

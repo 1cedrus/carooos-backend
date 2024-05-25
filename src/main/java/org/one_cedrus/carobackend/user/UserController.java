@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequiredArgsConstructor
@@ -15,6 +16,26 @@ public class UserController {
 
     @GetMapping("/api/user")
     public ResponseEntity<?> getUserInformation(Principal principal) {
+        return ResponseEntity.ok(userService.getInfo(principal.getName()));
+    }
+
+    @PostMapping("/api/user/profile-picture")
+    public ResponseEntity<?> updateProfilePicture(
+        @RequestParam("image") MultipartFile file,
+        Principal principal
+    ) {
+        userService.setProfilePic(principal.getName(), file);
+
+        return ResponseEntity.ok(userService.getInfo(principal.getName()));
+    }
+
+    @PostMapping("/api/user/email")
+    public ResponseEntity<?> updateEmail(
+        @RequestParam("email") String email,
+        Principal principal
+    ) {
+        userService.updateEmail(principal.getName(), email);
+
         return ResponseEntity.ok(userService.getInfo(principal.getName()));
     }
 
