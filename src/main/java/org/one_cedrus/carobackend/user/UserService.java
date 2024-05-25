@@ -3,11 +3,17 @@ package org.one_cedrus.carobackend.user;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.chat.ConversationService;
+import org.one_cedrus.carobackend.friends.dto.FriendsMessage;
+import org.one_cedrus.carobackend.friends.dto.FriendsMessageType;
 import org.one_cedrus.carobackend.game.GameService;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
 import org.one_cedrus.carobackend.user.dto.UserInfo;
 import org.one_cedrus.carobackend.user.model.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +21,14 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserService {
 
+    private static final Logger log = LoggerFactory.getLogger(
+        UserService.class
+    );
     private final ConversationService cService;
     private final GameService gameService;
     private final UserRepository userRepo;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final SimpMessagingTemplate simpMessagingTemplate;
 
     public boolean isExisted(String usernameOrEmail) {
         return userRepo.existsByUsernameOrEmail(
@@ -78,5 +89,44 @@ public class UserService {
                         .build()
             )
             .toList();
+    }
+
+    public void setOnline(String username) {
+        var user = getUser(username);
+
+        redisTemplate.opsForSet().add("onlineTracking", username);
+
+        user
+            .getFriends()
+            .forEach(o -> {
+                simpMessagingTemplate.convertAndSendToUser(
+                    o,
+                    "/topic/online",
+                    FriendsMessage.builder()
+                        .username(username)
+                        .type(FriendsMessageType.FriendOnline)
+                        .build()
+                );
+            });
+    }
+
+    public void setOffline(String username) {
+        var user = getUser(username);
+
+        redisTemplate.opsForSet().remove("onlineTracking", username);
+
+        user
+            .getFriends()
+            .forEach(
+                o ->
+                    simpMessagingTemplate.convertAndSendToUser(
+                        o,
+                        "/topic/online",
+                        FriendsMessage.builder()
+                            .username(username)
+                            .type(FriendsMessageType.FriendOffline)
+                            .build()
+                    )
+            );
     }
 }
