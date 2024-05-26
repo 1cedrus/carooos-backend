@@ -21,6 +21,9 @@ public class Conversation {
 
     private Integer numOfMessages;
 
+    @ManyToOne
+    private Message lastMessage;
+
     @OneToMany(mappedBy = "conversation")
     private Set<Message> messages;
 

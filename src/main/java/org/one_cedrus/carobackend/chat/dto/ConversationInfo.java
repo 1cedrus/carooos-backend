@@ -11,6 +11,7 @@ public class ConversationInfo {
 
     private Long cid;
     private List<String> peers;
-    private Boolean seen;
+    private Integer numberOfUnseen;
+    private Integer numberOfMessages;
     private Message lastMessage;
 }

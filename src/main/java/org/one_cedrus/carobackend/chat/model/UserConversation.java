@@ -22,7 +22,7 @@ public class UserConversation {
     @ManyToOne
     private Conversation conversation;
 
-    private Boolean seen;
+    private Integer numberOfUnseen;
 
     public static UserConversation create(
         User user,
@@ -31,7 +31,7 @@ public class UserConversation {
         return UserConversation.builder()
             .user(user)
             .conversation(conversation)
-            .seen(true)
+            .numberOfUnseen(0)
             .build();
     }
 }

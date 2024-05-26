@@ -7,7 +7,5 @@ import lombok.Setter;
 @Setter
 public class RawMessage {
 
-    private String sender;
-    private Long conversation;
     private String content;
 }

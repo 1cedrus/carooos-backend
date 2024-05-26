@@ -5,15 +5,34 @@ import java.util.Optional;
 import org.one_cedrus.carobackend.chat.model.Conversation;
 import org.one_cedrus.carobackend.chat.model.UserConversation;
 import org.one_cedrus.carobackend.user.model.User;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface UCRepository extends JpaRepository<UserConversation, Long> {
     List<UserConversation> findUserConversationsByConversation(
-        Conversation conver
+        Conversation conversation
     );
 
     Optional<UserConversation> getUserConversationByUserAndConversation_Id(
         User user,
         Long conversationId
+    );
+
+    List<
+        UserConversation
+    > findUserConversationsByUserOrderByConversation_LastMessage_TimeStampDesc(
+        User user,
+        Pageable pageable
+    );
+
+    //TODO: Make sure it fast
+    List<
+        UserConversation
+    > findUserConversationsByUserAndConversation_UserConversations_User_UsernameStartingWithOrderByConversation_LastMessage_TimeStampDesc(
+        User main,
+        String peer,
+        Pageable pageable
     );
 }
