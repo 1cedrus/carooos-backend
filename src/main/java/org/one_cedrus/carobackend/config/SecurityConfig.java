@@ -57,6 +57,7 @@ public class SecurityConfig {
                     authorizationManagerRequestMatcherRegistry
                         .requestMatchers(
                             "/api/auth/**",
+                            "/api/image/**",
                             "/ws",
                             "/api/public/**"
                         )

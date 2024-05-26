@@ -11,5 +11,5 @@ public class PubUserInfo {
 
     private String username;
     private Integer elo;
-    private String imageUrl;
+    private String profilePicUrl;
 }

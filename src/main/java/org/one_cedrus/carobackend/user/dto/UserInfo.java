@@ -4,7 +4,6 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import org.one_cedrus.carobackend.chat.dto.ConversationInfo;
 import org.one_cedrus.carobackend.user.model.Role;
 
 @Data
@@ -18,7 +17,4 @@ public class UserInfo {
     private Role role;
     private String profilePicUrl;
     private String currentGame;
-    private List<String> friends;
-    private List<String> requests;
-    private List<ConversationInfo> conversations;
 }

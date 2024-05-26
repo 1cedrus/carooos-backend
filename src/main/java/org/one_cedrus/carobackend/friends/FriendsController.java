@@ -12,38 +12,31 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/friends")
 public class FriendsController {
 
-    private final UserService userService;
     private final FriendsService friendsService;
 
-    @PostMapping("/{username}")
+    @GetMapping
+    public ResponseEntity<?> getFriends(Principal principal) {
+        return ResponseEntity.ok(
+            friendsService.getUserFriendData(principal.getName())
+        );
+    }
+
+    @PostMapping("/{receiver}")
     public ResponseEntity<?> friendRequest(
-        @PathVariable String username,
+        @PathVariable String receiver,
         Principal principal
     ) {
-        User sender = userService.getUser(principal.getName());
-        User receiver = userService.getUser(username);
-
-        boolean isSamePerson = sender
-            .getUsername()
-            .equals(receiver.getUsername());
-        if (isSamePerson) {
-            throw new RuntimeException("Caller and receiver is same person");
-        }
-
-        friendsService.handleFriendRequest(sender, receiver);
+        friendsService.handleFriendRequest(principal.getName(), receiver);
 
         return ResponseEntity.accepted().build();
     }
 
-    @DeleteMapping("/{username}")
+    @DeleteMapping("/{receiver}")
     public ResponseEntity<?> friendsCancel(
-        @PathVariable String username,
+        @PathVariable String receiver,
         Principal principal
     ) {
-        User sender = userService.getUser(principal.getName());
-        User receiver = userService.getUser(username);
-
-        friendsService.handleFriendCancel(sender, receiver);
+        friendsService.handleFriendCancel(principal.getName(), receiver);
 
         return ResponseEntity.accepted().build();
     }

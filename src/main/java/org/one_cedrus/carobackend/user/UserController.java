@@ -3,6 +3,7 @@ package org.one_cedrus.carobackend.user;
 import java.security.Principal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.one_cedrus.carobackend.user.dto.ChangeEmailRequest;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,12 +32,12 @@ public class UserController {
 
     @PostMapping("/api/user/email")
     public ResponseEntity<?> updateEmail(
-        @RequestParam("email") String email,
+        @RequestBody ChangeEmailRequest request,
         Principal principal
     ) {
-        userService.updateEmail(principal.getName(), email);
+        userService.updateEmail(principal.getName(), request.getEmail());
 
-        return ResponseEntity.ok(userService.getInfo(principal.getName()));
+        return ResponseEntity.accepted().build();
     }
 
     @GetMapping("/api/public/user")

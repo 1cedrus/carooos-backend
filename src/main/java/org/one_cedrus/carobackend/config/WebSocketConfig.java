@@ -2,8 +2,13 @@ package org.one_cedrus.carobackend.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Objects;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.auth.service.JwtService;
+import org.one_cedrus.carobackend.game.Game;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -20,9 +25,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
+import org.springframework.web.socket.handler.WebSocketHandlerDecorator;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -30,6 +38,9 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private static final Logger log = LoggerFactory.getLogger(
+        WebSocketConfig.class
+    );
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final ObjectMapper objectMapper;
@@ -64,6 +75,34 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         );
                     assert accessor != null;
 
+                    // Checking if they have permission to send messages in this game broker
+                    if (StompCommand.SEND.equals(accessor.getCommand())) {
+                        if (
+                            Objects.requireNonNull(
+                                accessor.getDestination()
+                            ).startsWith("/topic/game/")
+                        ) {
+                            var roomCode = accessor
+                                .getDestination()
+                                .substring(12);
+
+                            var username = Objects.requireNonNull(
+                                accessor.getUser()
+                            ).getName();
+
+                            if (
+                                !username.equals(
+                                    Game.roomCodeToFirstUser(roomCode)
+                                ) &&
+                                !username.equals(
+                                    Game.roomCodeToSecondUser(roomCode)
+                                )
+                            ) {
+                                return null;
+                            }
+                        }
+                    }
+
                     if (StompCommand.CONNECT.equals(accessor.getCommand())) {
                         final List<String> authHeader =
                             accessor.getNativeHeader("Authorization");
@@ -91,6 +130,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 }
             }
         );
+    }
+
+    @Override
+    public void configureWebSocketTransport(
+        WebSocketTransportRegistration registration
+    ) {
+        registration.addDecoratorFactory(handler ->
+            new WebSocketHandlerDecorator(handler) {
+                public void afterConnectionEstablished(
+                    @NonNull WebSocketSession session
+                ) throws Exception {
+                    session.getAttributes().put("SESSION", session);
+                    super.afterConnectionEstablished(session);
+                }
+            });
     }
 
     @Override

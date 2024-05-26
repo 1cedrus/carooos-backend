@@ -1,31 +1,53 @@
 package org.one_cedrus.carobackend.user;
 
+import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.one_cedrus.carobackend.chat.ConversationService;
 import org.one_cedrus.carobackend.friends.dto.FriendsMessage;
 import org.one_cedrus.carobackend.friends.dto.FriendsMessageType;
 import org.one_cedrus.carobackend.game.GameService;
+import org.one_cedrus.carobackend.user.dto.FriendInformation;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
 import org.one_cedrus.carobackend.user.dto.UserInfo;
 import org.one_cedrus.carobackend.user.model.User;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.socket.WebSocketSession;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
-    private final ConversationService cService;
     private final GameService gameService;
     private final ImageService imageService;
     private final UserRepository userRepo;
-    private final RedisTemplate<String, String> redisTemplate;
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private final HashMap<String, WebSocketSession> currentUserSessions =
+        new HashMap<>();
+    private final TaskScheduler taskScheduler;
+
+    public List<FriendInformation> getFriendsInfo(String username) {
+        var user = getUser(username);
+
+        return user
+            .getFriends()
+            .stream()
+            .map(
+                o ->
+                    FriendInformation.builder()
+                        .username(o)
+                        .isOnline(currentUserSessions.containsKey(o))
+                        .build()
+            )
+            .toList();
+    }
 
     public void updateEmail(String username, String email) {
         ensureValidEmail(email);
@@ -57,15 +79,6 @@ public class UserService {
         return UserInfo.builder()
             .username(username)
             .elo(user.getElo())
-            .friends(user.getFriends())
-            .requests(user.getRequests())
-            .conversations(
-                user
-                    .getUserConversations()
-                    .stream()
-                    .map(o -> cService.getInfo(o.getId()))
-                    .toList()
-            )
             .currentGame(currentGame)
             .email(user.getEmail())
             .profilePicUrl(user.getImageUrl())
@@ -78,7 +91,7 @@ public class UserService {
         return PubUserInfo.builder()
             .username(username)
             .elo(user.getElo())
-            .imageUrl(user.getImageUrl())
+            .profilePicUrl(user.getImageUrl())
             .build();
     }
 
@@ -102,35 +115,59 @@ public class UserService {
                     PubUserInfo.builder()
                         .username(user.getUsername())
                         .elo(user.getElo())
-                        .imageUrl(user.getImageUrl())
+                        .profilePicUrl(user.getImageUrl())
                         .build()
             )
             .toList();
     }
 
-    public void setOnline(String username) {
+    public void setOnline(String username, WebSocketSession session) {
         var user = getUser(username);
 
-        redisTemplate.opsForSet().add("onlineTracking", username);
+        // Disconnect last sessionId
+        var currentSession = currentUserSessions.get(username);
 
-        user
-            .getFriends()
-            .forEach(o -> {
-                simpMessagingTemplate.convertAndSendToUser(
-                    o,
-                    "/topic/online",
-                    FriendsMessage.builder()
-                        .username(username)
-                        .type(FriendsMessageType.FriendOnline)
-                        .build()
-                );
-            });
+        if (currentSession != null) {
+            simpMessagingTemplate.convertAndSendToUser(
+                username,
+                "/topic/online",
+                "SOMEONE GOT INTO YOUR ACCOUNT, RUN AWAY!!!"
+            );
+
+            taskScheduler.schedule(
+                () -> {
+                    try {
+                        currentSession.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException();
+                    }
+                },
+                Instant.now().plus(500, ChronoUnit.MILLIS)
+            );
+        }
+
+        currentUserSessions.put(username, session);
+
+        if (currentSession == null) {
+            user
+                .getFriends()
+                .forEach(o -> {
+                    simpMessagingTemplate.convertAndSendToUser(
+                        o,
+                        "/topic/online",
+                        FriendsMessage.builder()
+                            .username(username)
+                            .type(FriendsMessageType.FriendOnline)
+                            .build()
+                    );
+                });
+        }
     }
 
     public void setOffline(String username) {
         var user = getUser(username);
 
-        redisTemplate.opsForSet().remove("onlineTracking", username);
+        currentUserSessions.remove(username);
 
         user
             .getFriends()

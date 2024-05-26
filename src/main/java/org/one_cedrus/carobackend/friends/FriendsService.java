@@ -9,6 +9,8 @@ import org.one_cedrus.carobackend.chat.repository.UCRepository;
 import org.one_cedrus.carobackend.friends.dto.FriendsMessage;
 import org.one_cedrus.carobackend.friends.dto.FriendsMessageType;
 import org.one_cedrus.carobackend.user.UserRepository;
+import org.one_cedrus.carobackend.user.UserService;
+import org.one_cedrus.carobackend.user.dto.UserFriendData;
 import org.one_cedrus.carobackend.user.model.User;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,14 @@ public class FriendsService {
     private final UCRepository conversationRepository;
     private final ConversationRepository chatConversationRepository;
     private final SimpMessagingTemplate template;
+    private final UserService userService;
+
+    public UserFriendData getUserFriendData(String username) {
+        return UserFriendData.builder()
+            .friends(userService.getFriendsInfo(username))
+            .requests(userService.getUser(username).getRequests())
+            .build();
+    }
 
     public void ensureNotInFriendship(User sender, User receiver) {
         if (sender.getFriends().contains(receiver.getUsername())) {
@@ -30,7 +40,14 @@ public class FriendsService {
         }
     }
 
-    public void handleFriendRequest(User sender, User receiver) {
+    public void handleFriendRequest(String username, String receiverUsername) {
+        if (username.equals(receiverUsername)) {
+            throw new RuntimeException("Caller and receiver is same person");
+        }
+
+        var sender = userService.getUser(username);
+        var receiver = userService.getUser(receiverUsername);
+
         ensureNotInFriendship(sender, receiver);
 
         var isReceiverRequested = sender
@@ -73,23 +90,26 @@ public class FriendsService {
         }
     }
 
-    public void handleFriendCancel(User sender, User target) {
-        if (sender.getRequests().contains(target.getUsername())) {
-            sender.getRequests().remove(target.getUsername());
+    public void handleFriendCancel(String username, String receiverUsername) {
+        var sender = userService.getUser(username);
+        var receiver = userService.getUser(receiverUsername);
+
+        if (sender.getRequests().contains(receiver.getUsername())) {
+            sender.getRequests().remove(receiver.getUsername());
 
             userRepo.save(sender);
-        } else if (sender.getFriends().contains(target.getUsername())) {
-            sender.getFriends().remove(target.getUsername());
-            target.getFriends().remove(sender.getUsername());
+        } else if (sender.getFriends().contains(receiver.getUsername())) {
+            sender.getFriends().remove(receiver.getUsername());
+            receiver.getFriends().remove(sender.getUsername());
 
             userRepo.save(sender);
-            userRepo.save(target);
+            userRepo.save(receiver);
         } else {
             throw new RuntimeException(
                 String.format(
                     "%s and %s does not in any friendship situation",
                     sender.getUsername(),
-                    target.getUsername()
+                    receiver.getUsername()
                 )
             );
         }
