@@ -54,11 +54,11 @@ public class Game {
             .build();
     }
 
-    static String roomCodeToFirstUser(String roomCode) {
+    public static String roomCodeToFirstUser(String roomCode) {
         return roomCode.substring(0, roomCode.indexOf("-"));
     }
 
-    static String roomCodeToSecondUser(String roomCode) {
+    public static String roomCodeToSecondUser(String roomCode) {
         return roomCode.substring(roomCode.indexOf("-") + 1);
     }
 
@@ -90,16 +90,30 @@ public class Game {
         return moves.size() == 400;
     }
 
-    private boolean calculate(List<Short> movesOfPlayer, short operand) {
+    private boolean calculate(List<Short> movesOfPlayer, int operand) {
         int length = 1;
-        short lastMove = moves.getLast();
+        int lastMove = moves.getLast();
 
-        short tmp = lastMove;
+        int tmp = lastMove;
         boolean isBound = false;
         while (length < 5) {
             if (movesOfPlayer.contains((short) (tmp + operand))) {
-                length += 1;
-                tmp += operand;
+                if (
+                    operand == 1 &&
+                    Math.floor((double) (tmp + operand) / 20) != lastMove
+                ) {
+                    operand = -operand;
+                    tmp = lastMove;
+                    isBound = true;
+                } else if (
+                    operand == -1 &&
+                    Math.floor((double) (tmp + operand) / 20) != lastMove
+                ) {
+                    break;
+                } else {
+                    length += 1;
+                    tmp += operand;
+                }
             } else if (!isBound) {
                 operand = (short) -operand;
                 tmp = lastMove;
