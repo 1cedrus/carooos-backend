@@ -46,8 +46,14 @@ public class WebSocketEventListener {
             event.getMessage()
         );
 
+        StandardWebSocketSession session =
+            (StandardWebSocketSession) Objects.requireNonNull(
+                accessor.getSessionAttributes()
+            ).get("SESSION");
+
         userService.setOffline(
-            Objects.requireNonNull(accessor.getUser()).getName()
+            Objects.requireNonNull(accessor.getUser()).getName(),
+            session
         );
     }
 

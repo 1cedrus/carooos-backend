@@ -14,9 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class ImageService {
 
-    private static final Logger log = LoggerFactory.getLogger(
-        ImageService.class
-    );
     private final ImageRepository imageRepository;
 
     // TODO: Verify imageData is actually a image and also restrict how big image can be =))

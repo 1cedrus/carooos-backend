@@ -174,8 +174,12 @@ public class UserService {
         }
     }
 
-    public void setOffline(String username) {
+    public void setOffline(String username, WebSocketSession session) {
         var user = getUser(username);
+
+        if (currentUserSessions.get(username).equals(session)) {
+            currentUserSessions.remove(username);
+        }
 
         user
             .getFriends()

@@ -1,10 +1,13 @@
 package org.one_cedrus.carobackend.user;
 
 import java.security.Principal;
+import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.user.dto.ChangeEmailRequest;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,7 +47,9 @@ public class UserController {
     public ResponseEntity<?> getPublicInformation(
         @RequestParam String username
     ) {
-        return ResponseEntity.ok(userService.getPubInfo(username));
+        return ResponseEntity.status(HttpStatus.OK)
+            .cacheControl(CacheControl.maxAge(Duration.ofSeconds(10)))
+            .body(userService.getPubInfo(username));
     }
 
     @GetMapping("/api/public/users")
