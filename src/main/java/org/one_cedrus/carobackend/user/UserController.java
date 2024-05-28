@@ -53,4 +53,9 @@ public class UserController {
     ) {
         return ResponseEntity.ok(userService.listPublicUsersInformation(query));
     }
+
+    @GetMapping("/api/public/leader-board")
+    public ResponseEntity<?> listPublicUsersInformation() {
+        return ResponseEntity.ok(userService.getLeaderBoard());
+    }
 }

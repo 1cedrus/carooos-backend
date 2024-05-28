@@ -3,7 +3,6 @@ package org.one_cedrus.carobackend.chat;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,6 @@ import org.one_cedrus.carobackend.user.model.User;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.user.SimpSession;
 import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Service;
 
@@ -35,21 +33,20 @@ public class ConversationService {
     private final MessageRepository messageRepo;
     private final UserService userService;
     private final ConversationRepository conversationRepo;
+    private final RedisTemplate<String, String> redisStringTemplate;
     private final RedisTemplate<String, Integer> redisTemplate;
 
     public Pagination<ConversationInfo> getInfoInRange(
         String username,
         Integer from,
         Integer perPage,
-        String peerQuery
+        String _peerQuery
     ) {
         var user = userService.getUser(username);
 
         var topUserConversation =
-            uCRepo.findUserConversationsByUserAndConversation_UserConversations_User_UsernameStartingWithOrderByConversation_LastMessage_TimeStampDesc(
-                user,
-                peerQuery,
-                PageRequest.of(from, perPage)
+            uCRepo.findUserConversationsByUserOrderByConversation_LastMessage_TimeStampDesc(
+                user
             );
 
         var conversationsInfo = topUserConversation
@@ -114,10 +111,12 @@ public class ConversationService {
             rawMessage.getContent()
         );
 
+        messageRepo.save(newMessage);
+
+        conversation.setLastMessage(newMessage);
         conversation.setNumOfMessages(conversation.getNumOfMessages() + 1);
         conversationRepo.save(conversation);
 
-        messageRepo.save(newMessage);
         spreadMessage(newMessage, conversation);
     }
 
@@ -130,28 +129,35 @@ public class ConversationService {
             var gonnaSendUser = o.getUser().getUsername();
 
             if (userRegistry.getUser(gonnaSendUser) != null) {
-                var userSession = (SimpSession) Arrays.stream(
-                    Objects.requireNonNull(userRegistry.getUser(gonnaSendUser))
-                        .getSessions()
-                        .toArray()
-                )
-                    .findFirst()
-                    .orElseThrow();
+                //                var userSession = (SimpSession) Arrays.stream(
+                //                    Objects.requireNonNull(userRegistry.getUser(gonnaSendUser))
+                //                        .getSessions()
+                //                        .toArray()
+                //                )
+                //                    .findFirst()
+                //                    .orElseThrow();
+                //
+                //                var mayBeSubscription = userSession
+                //                    .getSubscriptions()
+                //                    .stream()
+                //                    .filter(
+                //                        s ->
+                //                            s
+                //                                .getDestination()
+                //                                .equals(
+                //                                    "/topic/messages/" + conversation.getId()
+                //                                )
+                //                    )
+                //                    .findFirst();
 
-                var mayBeSubscription = userSession
-                    .getSubscriptions()
-                    .stream()
-                    .filter(
-                        s ->
-                            s
-                                .getDestination()
-                                .equals(
-                                    "/topic/messages/" + conversation.getId()
-                                )
-                    )
-                    .findFirst();
+                boolean isSub = Objects.equals(
+                    redisStringTemplate
+                        .opsForValue()
+                        .get(gonnaSendUser + "messages"),
+                    "/topic/messages/" + conversation.getId()
+                );
 
-                if (mayBeSubscription.isEmpty()) {
+                if (!isSub) {
                     o.setNumberOfUnseen(o.getNumberOfUnseen() + 1);
                 }
 
@@ -160,6 +166,8 @@ public class ConversationService {
                     "/topic/messages",
                     message
                 );
+            } else {
+                o.setNumberOfUnseen(o.getNumberOfUnseen() + 1);
             }
         });
 

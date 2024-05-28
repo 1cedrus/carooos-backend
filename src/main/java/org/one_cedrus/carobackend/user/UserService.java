@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.adapter.standard.StandardWebSocketSession;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,14 @@ public class UserService {
     private final HashMap<String, WebSocketSession> currentUserSessions =
         new HashMap<>();
     private final TaskScheduler taskScheduler;
+
+    public List<PubUserInfo> getLeaderBoard() {
+        return userRepo
+            .findTopByOrderByEloDesc(PageRequest.of(0, 10))
+            .stream()
+            .map(o -> getPubInfo(o.getUsername()))
+            .toList();
+    }
 
     public List<FriendInformation> getFriendsInfo(String username) {
         var user = getUser(username);
@@ -121,11 +130,12 @@ public class UserService {
             .toList();
     }
 
-    public void setOnline(String username, WebSocketSession session) {
+    public void setOnline(String username, StandardWebSocketSession session) {
         var user = getUser(username);
 
         // Disconnect last sessionId
         var currentSession = currentUserSessions.get(username);
+        currentUserSessions.put(username, session);
 
         if (currentSession != null) {
             simpMessagingTemplate.convertAndSendToUser(
@@ -166,8 +176,6 @@ public class UserService {
 
     public void setOffline(String username) {
         var user = getUser(username);
-
-        currentUserSessions.remove(username);
 
         user
             .getFriends()

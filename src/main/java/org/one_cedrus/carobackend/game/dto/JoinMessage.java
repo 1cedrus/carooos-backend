@@ -1,5 +1,6 @@
 package org.one_cedrus.carobackend.game.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,4 +16,5 @@ public class JoinMessage {
     private final GameMessageType type = GameMessageType.Join;
     private List<Short> currentMoves;
     private String nextMove;
+    private LocalDateTime lastMoveTimeStamp;
 }

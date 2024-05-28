@@ -1,6 +1,7 @@
 package org.one_cedrus.carobackend.game;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -15,7 +16,6 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,9 +55,14 @@ public class GameController {
         }
 
         game.getMoves().add(move);
+        gameService.setLastMove(roomCode, LocalDateTime.now());
         template.convertAndSend(
             "/topic/game/" + roomCode,
-            MoveMessage.builder().move(move).nextMove(nextMoveUser).build()
+            MoveMessage.builder()
+                .move(move)
+                .nextMove(nextMoveUser)
+                .lastMoveTimeStamp(gameService.getLastMove(roomCode))
+                .build()
         );
 
         if (timeChecker.containsKey(roomCode)) {
@@ -95,7 +100,8 @@ public class GameController {
                 "/topic/game/" + roomCode,
                 JoinMessage.builder()
                     .currentMoves(game.getMoves())
-                    .nextMove(game.nextMoveUser())
+                    .lastMoveTimeStamp(gameService.getLastMove(roomCode))
+                    .nextMove(game.moveUser())
                     .build()
             );
         } else {
@@ -107,25 +113,23 @@ public class GameController {
     @GetMapping("/api/game")
     public ResponseEntity<?> listGames(
         Principal principal,
-        @RequestParam(defaultValue = "0") String from,
-        @RequestParam(defaultValue = "10") String perPage
+        @RequestParam(defaultValue = "0") Integer from,
+        @RequestParam(defaultValue = "10") Integer perPage
     ) {
         var caller = userService.getUser(principal.getName());
-        var fromInt = Integer.parseInt(from);
-        var perPageInt = Integer.parseInt(perPage);
-        var gamesOfCaller = caller.getGames().size();
+        var gamesOfCaller = gameRepository.countGamesByUsersContains(caller);
 
         var games = gameRepository.findGamesByUsersContainsOrderByIdDesc(
             caller,
-            PageRequest.of(fromInt, perPageInt)
+            PageRequest.of(from, perPage)
         );
 
         return ResponseEntity.ok(
             Pagination.<Game>builder()
-                .from(fromInt)
-                .perPage(perPageInt)
+                .from(from)
+                .perPage(perPage)
                 .items(games)
-                .hasNextPage((fromInt + 1) * perPageInt < gamesOfCaller)
+                .hasNextPage((from + 1) * perPage < gamesOfCaller)
                 .total(gamesOfCaller)
                 .build()
         );

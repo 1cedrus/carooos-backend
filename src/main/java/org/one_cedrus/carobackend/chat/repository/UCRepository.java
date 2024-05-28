@@ -23,16 +23,6 @@ public interface UCRepository extends JpaRepository<UserConversation, Long> {
     List<
         UserConversation
     > findUserConversationsByUserOrderByConversation_LastMessage_TimeStampDesc(
-        User user,
-        Pageable pageable
-    );
-
-    //TODO: Make sure it fast
-    List<
-        UserConversation
-    > findUserConversationsByUserAndConversation_UserConversations_User_UsernameStartingWithOrderByConversation_LastMessage_TimeStampDesc(
-        User main,
-        String peer,
-        Pageable pageable
+        User user
     );
 }

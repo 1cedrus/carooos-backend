@@ -15,4 +15,6 @@ public interface GameRepository extends JpaRepository<Game, Long> {
         User user,
         Pageable pageable
     );
+
+    Integer countGamesByUsersContains(User user);
 }

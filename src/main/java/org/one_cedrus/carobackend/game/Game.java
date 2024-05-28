@@ -94,20 +94,22 @@ public class Game {
         int length = 1;
         int lastMove = moves.getLast();
 
+        int lastMoveRow = (int) Math.floor((double) lastMove / 20);
+
         int tmp = lastMove;
         boolean isBound = false;
         while (length < 5) {
             if (movesOfPlayer.contains((short) (tmp + operand))) {
                 if (
                     operand == 1 &&
-                    Math.floor((double) (tmp + operand) / 20) != lastMove
+                    Math.floor((double) (tmp + operand) / 20) != lastMoveRow
                 ) {
                     operand = -operand;
                     tmp = lastMove;
                     isBound = true;
                 } else if (
                     operand == -1 &&
-                    Math.floor((double) (tmp + operand) / 20) != lastMove
+                    Math.floor((double) (tmp + operand) / 20) != lastMoveRow
                 ) {
                     break;
                 } else {
@@ -115,7 +117,7 @@ public class Game {
                     tmp += operand;
                 }
             } else if (!isBound) {
-                operand = (short) -operand;
+                operand = -operand;
                 tmp = lastMove;
                 isBound = true;
             } else {

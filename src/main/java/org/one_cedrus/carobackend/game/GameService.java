@@ -1,6 +1,7 @@
 package org.one_cedrus.carobackend.game;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
@@ -14,6 +15,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.function.support.RouterFunctionMapping;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,16 @@ public class GameService {
     private final Map<String, Game> games = new HashMap<>();
     private final Map<String, String> usernameToGame = new HashMap<>();
     private final Map<String, ScheduledFuture<?>> onInitGame = new HashMap<>();
+    private final Map<String, LocalDateTime> gameToLastMove = new HashMap<>();
+    private final RouterFunctionMapping routerFunctionMapping;
+
+    public void setLastMove(String roomCode, LocalDateTime timeStamp) {
+        gameToLastMove.put(roomCode, timeStamp);
+    }
+
+    public LocalDateTime getLastMove(String roomCode) {
+        return gameToLastMove.get(roomCode);
+    }
 
     public boolean endOrDraw(String roomCode) {
         Game game = games.get(roomCode);
@@ -64,6 +76,7 @@ public class GameService {
                 "/topic/game/" + roomCode,
                 JoinMessage.builder()
                     .currentMoves(game.getMoves())
+                    .lastMoveTimeStamp(gameToLastMove.get(roomCode))
                     .nextMove(game.getFirstMoveUser())
                     .build()
             );
@@ -77,10 +90,12 @@ public class GameService {
 
         var initGame = taskScheduler.schedule(
             () -> {
-                unSubmitGame(firstUser, roomCode);
-                unSubmitGame(secondUser, roomCode);
+                if (!games.containsKey(roomCode)) {
+                    unSubmitGame(firstUser, roomCode);
+                    unSubmitGame(secondUser, roomCode);
 
-                onInitGame.remove(roomCode);
+                    onInitGame.remove(roomCode);
+                }
             },
             Instant.now().plus(5, ChronoUnit.SECONDS)
         );
@@ -122,8 +137,8 @@ public class GameService {
         );
     }
 
-    public void submitGame(String username, String id) {
-        usernameToGame.put(username, id);
+    public void submitGame(String username, String roomCode) {
+        usernameToGame.put(username, roomCode);
     }
 
     public void unSubmitGame(String username, String roomCode) {
@@ -160,6 +175,7 @@ public class GameService {
 
         unSubmitGame(game.firstUser(), roomCode);
         unSubmitGame(game.secondUser(), roomCode);
+        gameToLastMove.remove(roomCode);
 
         var firstUser = getUser(game.firstUser());
         var secondUser = getUser(game.secondUser());
@@ -177,6 +193,7 @@ public class GameService {
 
         unSubmitGame(game.firstUser(), roomCode);
         unSubmitGame(game.secondUser(), roomCode);
+        gameToLastMove.remove(roomCode);
 
         var winner = getUser(game.getWinner());
         var loser = getUser(game.getLoser());
@@ -211,6 +228,7 @@ public class GameService {
         Game game = Game.newGame(roomCode);
 
         games.put(roomCode, game);
+        gameToLastMove.put(roomCode, LocalDateTime.now());
         return game;
     }
 }

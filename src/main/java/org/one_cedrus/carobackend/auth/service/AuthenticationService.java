@@ -1,5 +1,6 @@
 package org.one_cedrus.carobackend.auth.service;
 
+import jakarta.mail.MessagingException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -56,7 +57,7 @@ public class AuthenticationService {
     }
 
     //TODO: Maybe we need transaction here
-    public void resetPassword(String email) {
+    public void resetPassword(String email) throws MessagingException {
         var user = userService.getUser(email);
 
         if (redisTemplate.opsForValue().get(email) != null) {
@@ -68,7 +69,83 @@ public class AuthenticationService {
             email,
             "Reset Password Token",
             String.format(
-                "Your reset password token is %s.\n If you do not request this, please ignore this email!",
+                """
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            line-height: 1.6;
+                            color: #333;
+                        }
+                        .email-container {
+                            max-width: 600px;
+                            margin: 0 auto;
+                            padding: 20px;
+                            border: 1px solid #ddd;
+                            border-radius: 10px;
+                        }
+                        .header {
+                            background-color: #f8f8f8;
+                            padding: 10px 20px;
+                            border-bottom: 1px solid #ddd;
+                            text-align: center;
+                            font-size: 24px;
+                            font-weight: bold;
+                        }
+                        .content {
+                            padding: 20px;
+                        }
+                        .token-box {
+                            background-color: #f8f8f8;
+                            padding: 15px;
+                            margin: 20px 0;
+                            border: 1px solid #ddd;
+                            border-radius: 5px;
+                            text-align: center;
+                            font-size: 18px;
+                            font-weight: bold;
+                        }
+                        .footer {
+                            text-align: center;
+                            margin-top: 20px;
+                        }
+                        .footer a {
+                            color: #1a73e8;
+                            text-decoration: none;
+                        }
+                        .footer a:hover {
+                            text-decoration: underline;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="email-container">
+                        <div class="header">
+                            CAROOOS! Password Reset Request
+                        </div>
+                        <div class="content">
+                            <p>Hi %s,</p>
+                            <p>We received a request to reset your password for your CAROOOS! account associated with this email: %s.</p>
+                            <div class="token-box">
+                                Your reset password token is:<br><strong>%s</strong>
+                            </div>
+                            <p>This token is only valid for 5 minutes.</p>
+                            <p>If you did not request a password reset, please ignore this email.</p>
+                        </div>
+                        <div class="footer">
+                            <p>If you have any questions or need further assistance, feel free to <a href="#">contact our support team</a>.</p>
+                            <p>Best regards,<br>The CAROOOS! Team</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """,
+                user.getUsername(),
+                email,
                 token
             )
         );

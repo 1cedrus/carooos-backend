@@ -1,10 +1,10 @@
 package org.one_cedrus.carobackend.auth;
 
+import jakarta.mail.MessagingException;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.auth.dto.*;
 import org.one_cedrus.carobackend.auth.service.AuthenticationService;
-import org.one_cedrus.carobackend.game.GameRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
-    private final GameRepository gameRepository;
 
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(
@@ -49,7 +48,7 @@ public class AuthenticationController {
     @PostMapping("/reset-password")
     public ResponseEntity<AuthenticationResponse> resetPassword(
         @RequestBody ResetPasswordRequest request
-    ) {
+    ) throws MessagingException {
         authenticationService.resetPassword(request.getEmail());
         return ResponseEntity.accepted().build();
     }
