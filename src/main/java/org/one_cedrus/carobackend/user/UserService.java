@@ -36,7 +36,7 @@ public class UserService {
 
     public List<PubUserInfo> getLeaderBoard() {
         return userRepo
-            .findTopByOrderByEloDesc(PageRequest.of(0, 10))
+            .findAllByOrderByEloDesc(PageRequest.of(0, 10))
             .stream()
             .map(o -> getPubInfo(o.getUsername()))
             .toList();

@@ -17,5 +17,5 @@ public interface UserRepository extends JpaRepository<User, String> {
 
     boolean existsByUsernameOrEmail(String username, String email);
 
-    List<User> findTopByOrderByEloDesc(Pageable pageable);
+    List<User> findAllByOrderByEloDesc(Pageable pageable);
 }
