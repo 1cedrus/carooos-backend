@@ -16,11 +16,23 @@ public class RedisConfig {
     @Value("${SPRING_REDIS_PORT}")
     private Integer redisPort;
 
+    @Value("${SPRING_REDIS_USERNAME}")
+    private String username;
+
+    @Value("${SPRING_REDIS_PASSWORD}")
+    private String password;
+
     @Bean
     LettuceConnectionFactory lettuceConnectionFactory() {
-        return new LettuceConnectionFactory(
-            new RedisStandaloneConfiguration(redisHost, redisPort)
+        var redisConfig = new RedisStandaloneConfiguration(
+            redisHost,
+            redisPort
         );
+
+        redisConfig.setUsername(username);
+        redisConfig.setPassword(password);
+
+        return new LettuceConnectionFactory(redisConfig);
     }
 
     @Bean

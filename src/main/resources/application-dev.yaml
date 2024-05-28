@@ -5,7 +5,7 @@ spring:
     username: carroosservices@gmail.com
     password: eyyf kkrh bpnf msnq
   datasource:
-    url: jdbc:postgresql://${DEV_POSTGRESQL_DATABASE_HOST}/postgres
+    url: jdbc:postgresql://${DEV_POSTGRESQL_DATABASE_HOST}/defaultdb
     username: ${DEV_POSTGRESQL_DATABASE_USERNAME}
     password: ${DEV_POSTGRESQL_DATABASE_PASSWORD}
   jpa:
