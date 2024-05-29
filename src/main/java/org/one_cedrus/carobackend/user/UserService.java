@@ -12,6 +12,7 @@ import org.one_cedrus.carobackend.game.GameService;
 import org.one_cedrus.carobackend.user.dto.FriendInformation;
 import org.one_cedrus.carobackend.user.dto.PubUserInfo;
 import org.one_cedrus.carobackend.user.dto.UserInfo;
+import org.one_cedrus.carobackend.user.image.ImageService;
 import org.one_cedrus.carobackend.user.model.User;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

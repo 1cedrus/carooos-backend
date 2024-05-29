@@ -1,4 +1,4 @@
-package org.one_cedrus.carobackend.user;
+package org.one_cedrus.carobackend.user.image;
 
 import java.util.Optional;
 import org.one_cedrus.carobackend.user.model.Image;
