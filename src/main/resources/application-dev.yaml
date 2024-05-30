@@ -2,12 +2,12 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: carroosservices@gmail.com
-    password: eyyf kkrh bpnf msnq
+    username: ${EMAIL_SERVICE_USERNAME}
+    password: ${EMAIL_SERVICE_PASSWORD}
   datasource:
-    url: jdbc:postgresql://${DEV_POSTGRESQL_DATABASE_HOST}/defaultdb
-    username: ${DEV_POSTGRESQL_DATABASE_USERNAME}
-    password: ${DEV_POSTGRESQL_DATABASE_PASSWORD}
+    url: jdbc:postgresql://${POSTGRESQL_DATABASE_HOST}/${DATABASE_NAME}
+    username: ${POSTGRESQL_DATABASE_USERNAME}
+    password: ${POSTGRESQL_DATABASE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,9 +20,12 @@ spring:
     redis:
       host: ${SPRING_REDIS_HOST}
       port: ${SPRING_REDIS_PORT}
+      username: ${SPRING_REDIS_USERNAME}
+      password: ${SPRING_REDIS_PASSWORD}
+
 
 server:
-  port: 9000
+  port: ${SERVER_PORT}
 
 spring.mail.properties.mail.smtp.auth: true
 spring.mail.properties.mail.smtp.starttls.enable: true

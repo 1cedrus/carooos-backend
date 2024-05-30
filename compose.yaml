@@ -5,6 +5,8 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_USER: myadmin
       POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - '5432:5432'
   redis:
     image: redis:alpine
     ports:

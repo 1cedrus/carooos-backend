@@ -7,8 +7,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.one_cedrus.carobackend.auth.service.JwtService;
 import org.one_cedrus.carobackend.game.Game;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -21,6 +19,7 @@ import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -38,9 +37,6 @@ import org.springframework.web.socket.handler.WebSocketHandlerDecorator;
 @Order(Ordered.HIGHEST_PRECEDENCE + 99)
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private static final Logger log = LoggerFactory.getLogger(
-        WebSocketConfig.class
-    );
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final ObjectMapper objectMapper;
@@ -145,6 +141,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                     super.afterConnectionEstablished(session);
                 }
             });
+
+        registration.setMessageSizeLimit(500 * 1024);
     }
 
     @Override
