@@ -18,12 +18,18 @@ services:
     ports:
       - "9000:9000"
     environment:
-      DEV_POSTGRESQL_DATABASE_HOST: postgres
-      DEV_POSTGRESQL_DATABASE_USERNAME: myadmin
-      DEV_POSTGRESQL_DATABASE_PASSWORD: mysecretpassword
+      POSTGRESQL_DATABASE_HOST: postgres
+      POSTGRESQL_DATABASE_USERNAME: myadmin
+      POSTGRESQL_DATABASE_PASSWORD: mysecretpassword
       JWT_SECRET_KEY: l3CYvpkV0LIwuY1h7HBRHwYYYnMBVGFn
+      EMAIL_SERVICE_USERNAME: carroosservices@gmail.com
+      EMAIL_SERVICE_PASSWORD: eyyf kkrh bpnf msnq
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_USERNAME: 
+      SPRING_REDIS_PASSWORD: 
+      DATABASE_NAME: postgres
+      SERVER_PORT: 9000
       ACTIVE_PROFILE: dev
     depends_on:
       - redis
